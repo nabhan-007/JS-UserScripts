@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         Brototype - Topic State Memory
 // @namespace    http://tampermonkey.net/
-// @version      5.2.2
-// @description  Remembers which topics you've expanded or collapsed on Brototype module pages — survives page reloads, SPA navigation, and re-renders.
-// @description  Features: Persistent state per topic, Expand All / Collapse All with live counter + automatic read-more expansion, translucent overlay during batch ops, auto-scroll to last expanded topic, upload-safe, SPA-aware. Zero config, zero dependencies.
+// @version      5.2.6
+// @description  Remembers which topics you've expanded or collapsed on Brototype module pages — survives page reloads, SPA navigation, and re-renders. Persistent state per topic, Expand All / Collapse All with live counter + automatic read-more expansion, translucent overlay during batch ops, auto-scroll to last expanded topic, upload-safe, SPA-aware. Zero config, zero dependencies.
 // @author       Nabhan
-// @match        https://student.brototype.com/tasks/module/details*
+// @match        https://student.brototype.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=brototype.com
 // @grant        none
 // @license      MIT
@@ -16,18 +15,17 @@
 
   // ── Config ────────────────────────────────────────────────
 
-  // All localStorage keys use this prefix.
-  // Change this number to reset saved state (e.g., after a breaking update).
   const PREFIX = "brot_topic5_";
-
-  // Tag used in console.log so our messages are easy to spot.
   const LOG = "[TopicMemory]";
 
-  // ── Overlay ─────────────────────────────────────────────────
+  // The script now runs on the whole domain (see @match). Only act on
+  // module details pages; the SPA watchers stay alive everywhere so
+  // navigating into a module still triggers init.
+  function isModulePage() {
+    return /^\/tasks\/module\/details([/?]|$)/.test(location.pathname);
+  }
 
-  // Shows a translucent full-page overlay with a spinner and message
-  // while the script is batch-clicking topics. Prevents the user
-  // from interfering with staggered expand/collapse operations.
+  // ── Overlay ─────────────────────────────────────────────────
 
   let overlayTimeout = null;
   let overlaySpin = null;
@@ -91,33 +89,32 @@
 
   // ── DOM helpers ────────────────────────────────────────────
 
-  // Extracts the module ID from the URL, e.g.
-  // "https://...details?id=abc-123" → "abc-123"
   function getModuleId() {
     const m = location.href.match(/id=([a-f0-9-]+)/i);
-    return m ? m[1] : "";
+    if (m) return m[1];
+    let h = 0;
+    for (const ch of location.pathname) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return "u" + h.toString(36);
   }
 
-  // Finds all topic container elements on the page.
-  // Strategy A (primary): text-based via h6 content — survives MUI CSS changes.
-  // Strategy B (fallback): hash-class-based — catches unusual DOM layouts.
+  // H3 fix: dynamic DOM climb instead of hard-coded 3 levels.
+  // Walks up from h6 to find the first ancestor that has ≥2 children
+  // and contains the h6 in its first child.
+  let usedFallback = false;
+
   function getContainers() {
-    // ── Strategy A: text-based (stable) ──
+    // Strategy A: text-based (stable)
     const stable = Array.from(document.querySelectorAll("h6.MuiTypography-h6"))
       .filter((h) => /^topic\s+\d+/i.test(h.textContent.trim()))
-      .map((h) => h.parentElement.parentElement.parentElement)
-      .filter((c) => {
-        if (!c || c.children.length < 1) return false;
-        const h6 = c.querySelector("h6.MuiTypography-h6");
-        return h6 && c.children[0].contains(h6);
-      });
+      .map((h) => findContainerFromH6(h))
+      .filter(Boolean);
 
     if (stable.length > 0) {
-      getContainers._usedFallback = false;
+      usedFallback = false;
       return stable;
     }
 
-    // ── Strategy B: fallback using hash class ──
+    // Strategy B: fallback using hash class
     const fallback = Array.from(
       document.querySelectorAll(
         'div[class*="css-"] > div[class*="css-"] > div[class*="css-"]' +
@@ -128,18 +125,53 @@
       return h6 && /^topic\s+\d+/i.test(h6.textContent.trim());
     });
 
-    getContainers._usedFallback = fallback.length > 0;
+    usedFallback = fallback.length > 0;
     return fallback;
   }
-  getContainers._usedFallback = false;
 
-  // Returns true if a topic container is expanded
-  // (has a content div as children[1]).
-  function isExpanded(c) {
-    return c.children.length > 1;
+  // H3 fix: walk up from h6 to find the topic container dynamically.
+  // Skips the first cursor:pointer ancestor (header div) and returns
+  // the second (the actual clickable topic container with React onClick).
+  function findContainerFromH6(h6) {
+    let el = h6.parentElement;
+    let foundPointer = false;
+    while (el && el !== document.body) {
+      if (getComputedStyle(el).cursor === "pointer") {
+        if (!foundPointer) {
+          foundPointer = true;
+        } else {
+          return el;
+        }
+      }
+      el = el.parentElement;
+    }
+    return null;
   }
 
-  // Reads the topic title from inside a container ("Topic 1", etc.)
+  // Detects expanded state across two DOM styles:
+  // 1. Module 10: content is a child of the container (child count changes)
+  // 2. Miscellaneous: content is a sibling of the container (child count stable)
+  // Both detected by: does a non-topic h6 exist inside the container (style 1)
+  // or as the next sibling (style 2)?
+  function isExpanded(c) {
+    // Style 1: expanded content inside the container
+    for (const child of c.children) {
+      const h6 = child.querySelector("h6.MuiTypography-h6");
+      if (h6 && !/^topic\s+\d+/i.test(h6.textContent.trim())) {
+        return child.offsetHeight > 0;
+      }
+    }
+    // Style 2: expanded content as next sibling of the container
+    const next = c.nextElementSibling;
+    if (next) {
+      const h6 = next.querySelector("h6.MuiTypography-h6");
+      if (h6 && !/^topic\s+\d+/i.test(h6.textContent.trim())) {
+        return next.offsetHeight > 0;
+      }
+    }
+    return false;
+  }
+
   function getTitle(c) {
     const h6 = c.querySelector("h6.MuiTypography-h6");
     return h6 ? h6.textContent.trim() : "";
@@ -158,7 +190,8 @@
   function load() {
     try {
       return JSON.parse(localStorage.getItem(moduleKey())) || {};
-    } catch {
+    } catch (e) {
+      console.warn(LOG, "localStorage parse failed:", e);
       return {};
     }
   }
@@ -173,12 +206,37 @@
 
   // ── UI Controls ────────────────────────────────────────────
 
+  // M5 fix: fallback anchor strategies
   function findAnchor() {
+    // Strategy 1: Report An Issue button (primary)
     const btn = document.querySelector('[aria-label="Report An Issue"]');
-    if (!btn) return null;
-    const inner = btn.parentElement;
-    const outer = inner.parentElement;
-    return { outer, inner };
+    if (btn) {
+      const inner = btn.parentElement;
+      const outer = inner.parentElement;
+      return { outer, inner };
+    }
+
+    // Strategy 2: any toolbar-like container with inline-flex or flex
+    const toolbars = document.querySelectorAll(
+      '[class*="MuiToolbar"], [class*="toolbar"], [role="toolbar"]',
+    );
+    for (const bar of toolbars) {
+      return { outer: bar, inner: bar.firstChild };
+    }
+
+    // Strategy 3: top-right action area (last flex child of main header)
+    const header = document.querySelector(
+      'header, [class*="Header"], [class*="header"], nav',
+    );
+    if (header) {
+      const actions = header.querySelectorAll("button, [role='button']");
+      if (actions.length > 0) {
+        const last = actions[actions.length - 1];
+        return { outer: last.parentElement, inner: last };
+      }
+    }
+
+    return null;
   }
 
   let addControlsObserver = null;
@@ -261,6 +319,8 @@
   // ── Toggle All / Counter ────────────────────────────────────
 
   function toggleAll(expand) {
+    if (restoring) return;
+
     const containers = getContainers();
     const toToggle = containers.filter((c) =>
       expand ? !isExpanded(c) : isExpanded(c),
@@ -274,6 +334,7 @@
       setTimeout(() => clickHeader(c), i * 300);
     });
 
+    // Fix Perf#6: use (N-1)*300+400 instead of N*300+400
     setTimeout(
       () => {
         if (expand) {
@@ -284,7 +345,7 @@
         hideOverlay();
         console.log(LOG, expand ? "Expand" : "Collapse", "All done");
       },
-      toToggle.length * 300 + 400,
+      (toToggle.length - 1) * 300 + 400,
     );
   }
 
@@ -298,34 +359,41 @@
 
   // ── Click simulation ───────────────────────────────────────
 
+  // H2 fix: click the container itself — React onClick lives here
   function clickHeader(c) {
-    const header = c.children[0];
-    if (header) {
-      header.dispatchEvent(
-        new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          detail: 1,
-        }),
-      );
-    }
+    c.click();
   }
 
+  // Fix: scope clickReadMore to non-header content children only
   function clickReadMore(container) {
-    const header = container.children[0];
+    const topicH6 = container.querySelector("h6.MuiTypography-h6");
+    let headerEl = null;
+    if (topicH6) {
+      headerEl = topicH6.parentElement;
+      while (headerEl && headerEl.parentElement !== container) {
+        headerEl = headerEl.parentElement;
+      }
+    }
     Array.from(container.children).forEach((child) => {
-      if (child === header) return;
-      child
-        .querySelectorAll('button, [role="button"], span, p, a')
-        .forEach((el) => {
-          if (
-            el.textContent.trim().toLowerCase().includes("read more") &&
-            el.offsetHeight > 0
-          ) {
-            el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-          }
-        });
+      if (headerEl && child === headerEl) return;
+      child.querySelectorAll("span, p, a").forEach((el) => {
+        if (
+          el.textContent.trim().toLowerCase().includes("read more") &&
+          el.offsetHeight > 0 &&
+          el.closest("button, [role='button']") === null
+        ) {
+          el.closest("button, [role='button']")?.click() || el.click();
+        }
+      });
+      // Also check buttons/role=button directly
+      child.querySelectorAll('button, [role="button"]').forEach((el) => {
+        if (
+          el.textContent.trim().toLowerCase().includes("read more") &&
+          el.offsetHeight > 0
+        ) {
+          el.click();
+        }
+      });
     });
   }
 
@@ -339,22 +407,39 @@
       const title = getTitle(c);
       if (!title) return;
 
+      // Find the header element (the cursor:pointer ancestor that is the h6's parent chain)
+      // On both DOM styles, this is the depth-1 div that contains h6 + subtitle
+      const topicH6 = c.querySelector("h6.MuiTypography-h6");
+      let headerEl = null;
+      if (topicH6) {
+        headerEl = topicH6.parentElement;
+        while (headerEl && headerEl.parentElement !== c) {
+          headerEl = headerEl.parentElement;
+        }
+      }
+
       let lastClick = 0;
 
       c.addEventListener("click", function onClick(e) {
         const now = Date.now();
-        if (now - lastClick < 200) return;
+        // Only debounce synthetic clicks (our own c.click() batch ops).
+        // Real user clicks are never swallowed — e.g. a fast click right
+        // after Expand/Collapse All on the same topic still registers.
+        if (!e.isTrusted && now - lastClick < 200) return;
         lastClick = now;
 
+        // Check click was on the header area (not on expanded content inside the container).
+        // Synthetic clicks (c.click()) have target === c — treat those as header clicks too.
         let el = e.target;
-        const header = c.children[0];
-        let onHeader = false;
-        while (el && el !== c) {
-          if (el === header) {
-            onHeader = true;
-            break;
+        let onHeader = el === c;
+        if (headerEl && !onHeader) {
+          while (el && el !== c) {
+            if (el === headerEl) {
+              onHeader = true;
+              break;
+            }
+            el = el.parentElement;
           }
-          el = el.parentElement;
         }
         if (!onHeader) return;
 
@@ -363,7 +448,12 @@
         saved[title] = newState;
         save(saved);
 
-        if (newState) localStorage.setItem(lastKey(), title);
+        // M2 fix: wrap in try/catch
+        try {
+          if (newState) localStorage.setItem(lastKey(), title);
+        } catch (e) {
+          console.warn(LOG, "localStorage lastKey save failed:", e);
+        }
 
         setTimeout(updateCounter, 500);
         console.log(LOG, title, "\u2192", newState);
@@ -374,9 +464,14 @@
   // ── Restore saved state ────────────────────────────────────
 
   let restoring = false;
+  let restoreDirty = false;
 
   function restore() {
-    if (restoring) return;
+    if (restoring) {
+      // M1 fix: mark dirty so we re-restore after current pass finishes
+      restoreDirty = true;
+      return;
+    }
     restoring = true;
 
     showOverlay("Restoring topics\u2026");
@@ -409,8 +504,15 @@
     setTimeout(
       () => {
         updateCounter();
-        scrollToLast();
         restoring = false;
+
+        // M1 fix: if DOM changed during restore, re-restore
+        if (restoreDirty) {
+          restoreDirty = false;
+          restore();
+        } else {
+          scrollToLast();
+        }
       },
       pending.length * 200 + 300,
     );
@@ -418,20 +520,50 @@
 
   // ── Scroll to last expanded topic ──────────────────────────
 
+  // M4 fix: track scroll timeout, clear on nav/unload
+  let scrollTimeout = null;
+
+  function clearScrollTimeout() {
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = null;
+    }
+  }
+
   function scrollToLast() {
+    clearScrollTimeout();
+
     const containers = getContainers();
-    if (containers.length === 0) { hideOverlay(); return; }
+    if (containers.length === 0) {
+      hideOverlay();
+      return;
+    }
 
     const expanded = containers.filter(isExpanded).length;
-    if (expanded === 0 || expanded === containers.length) { hideOverlay(); return; }
+    if (expanded === 0 || expanded === containers.length) {
+      hideOverlay();
+      return;
+    }
 
-    const last = localStorage.getItem(lastKey());
-    if (!last) { hideOverlay(); return; }
+    let last = null;
+    try {
+      last = localStorage.getItem(lastKey());
+    } catch (e) {
+      console.warn(LOG, "localStorage lastKey read failed:", e);
+    }
+    if (!last) {
+      hideOverlay();
+      return;
+    }
 
     const c = containers.find((el) => getTitle(el) === last);
-    if (!c || !isExpanded(c)) { hideOverlay(); return; }
+    if (!c || !isExpanded(c)) {
+      hideOverlay();
+      return;
+    }
 
-    setTimeout(() => {
+    scrollTimeout = setTimeout(() => {
+      scrollTimeout = null;
       let scroller = c.parentElement;
       while (scroller && scroller !== document.body) {
         const style = getComputedStyle(scroller);
@@ -447,6 +579,121 @@
     }, 600);
   }
 
+  // ── Upload tip toast ────────────────────────────────────────
+
+  // Shows a dismissible tip when the user clicks "Add Attachments" while
+  // other topics are still open. Auto-scroll to the last upload only
+  // works when the page is in a partially-expanded state, so the tip
+  // tells the user to Collapse All then reopen the topic they uploaded to.
+
+  let toastTimeout = null;
+
+  function hideUploadTip() {
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+      toastTimeout = null;
+    }
+    const el = document.getElementById("brot-upload-tip");
+    if (el) el.remove();
+  }
+
+  function showUploadTip() {
+    hideUploadTip();
+    if (!isModulePage()) return;
+    const containers = getContainers();
+    if (containers.filter(isExpanded).length <= 1) return;
+
+    const el = document.createElement("div");
+    el.id = "brot-upload-tip";
+    el.style.cssText = [
+      "position:fixed",
+      "top:16px",
+      "left:50%",
+      "transform:translateX(-50%)",
+      "z-index:100000",
+      "display:flex",
+      "align-items:center",
+      "gap:10px",
+      "max-width:480px",
+      "padding:12px 12px 12px 16px",
+      "border-radius:8px",
+      "border-left:5px solid #f59e0b",
+      "background:#fff",
+      "color:#1f2937",
+      "font:14px/1.5 sans-serif",
+      "font-weight:600",
+      "box-shadow:0 6px 24px rgba(0,0,0,0.35)",
+      "cursor:pointer",
+      "user-select:none",
+    ].join(";");
+
+    const msg = document.createElement("span");
+    msg.textContent =
+      "For the script to scroll to this upload on your next visit, tap Collapse, then reopen this topic.";
+    el.appendChild(msg);
+
+    const close = document.createElement("span");
+    close.textContent = "\u2715";
+    close.style.cssText = [
+      "margin-left:4px",
+      "color:#9ca3af",
+      "font-size:14px",
+      "font-weight:700",
+      "cursor:pointer",
+      "flex-shrink:0",
+    ].join(";");
+    close.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideUploadTip();
+    });
+    el.appendChild(close);
+
+    el.addEventListener("click", hideUploadTip);
+    document.body.appendChild(el);
+
+    el.animate(
+      [
+        { transform: "translateX(-50%) translateY(-80px)", opacity: 0 },
+        {
+          transform: "translateX(-50%) translateY(0)",
+          opacity: 1,
+          offset: 0.7,
+        },
+        { transform: "translateX(-50%) translateY(0)", opacity: 1 },
+      ],
+      { duration: 400, easing: "ease-out", fill: "forwards" },
+    )
+      .finished.then(() => {
+        el.animate(
+          [
+            { transform: "translateX(-50%) scale(1)" },
+            { transform: "translateX(-50%) scale(1.03)" },
+            { transform: "translateX(-50%) scale(1)" },
+          ],
+          { duration: 300, easing: "ease-in-out" },
+        );
+      })
+      .catch(() => {});
+
+    toastTimeout = setTimeout(hideUploadTip, 10000);
+  }
+
+  function onUploadAreaClick(e) {
+    if (!isModulePage()) return;
+    let node = e.target;
+    while (node && node !== document.body) {
+      if (node.nodeType === 1 && getComputedStyle(node).cursor === "pointer") {
+        if (/add\s+attachments/i.test(node.textContent || "")) {
+          setTimeout(showUploadTip, 50);
+          return;
+        }
+      }
+      node = node.parentElement;
+    }
+  }
+
+  document.addEventListener("click", onUploadAreaClick, true);
+
   // ── DOM watch (survive React re-renders) ───────────────────
 
   let controlsObserver = null;
@@ -455,7 +702,12 @@
   function watchControls() {
     if (controlsObserver) controlsObserver.disconnect();
 
-    controlsObserver = new MutationObserver(() => {
+    controlsObserver = new MutationObserver((mutations) => {
+      // Fix Perf#5: skip if controls still exist and topic count unchanged
+      const controlsExist = !!document.getElementById("brot-topic-controls");
+      const hasTopics = getContainers().length > 0;
+      if (controlsExist && hasTopics) return;
+
       if (watchDebounce) clearTimeout(watchDebounce);
       watchDebounce = setTimeout(() => {
         if (document.getElementById("brot-topic-controls")) return;
@@ -489,13 +741,28 @@
     });
   }
 
+  function disconnectAllObservers() {
+    if (controlsObserver) {
+      controlsObserver.disconnect();
+      controlsObserver = null;
+    }
+    if (addControlsObserver) {
+      addControlsObserver.disconnect();
+      addControlsObserver = null;
+    }
+    if (watchDebounce) {
+      clearTimeout(watchDebounce);
+      watchDebounce = null;
+    }
+    clearScrollTimeout();
+  }
+
   // ── Init ───────────────────────────────────────────────────
 
   function init() {
+    if (!isModulePage()) return;
     const containers = getContainers();
-    const strategy = getContainers._usedFallback
-      ? "fallback (hash)"
-      : "primary (stable)";
+    const strategy = usedFallback ? "fallback (hash)" : "primary (stable)";
     console.log(LOG, "init \u2014", containers.length, "topics via", strategy);
 
     addControls();
@@ -521,9 +788,22 @@
 
   window.addEventListener("popstate", onUrlChange);
 
+  // L3 fix: cleanup on page unload
+  window.addEventListener("unload", () => {
+    document.removeEventListener("click", onUploadAreaClick, true);
+    hideUploadTip();
+    disconnectAllObservers();
+  });
+
   function onUrlChange() {
-    if (controlsObserver) controlsObserver.disconnect();
-    showOverlay("Restoring topics\u2026");
+    disconnectAllObservers();
+    hideOverlay();
+
+    // Left the module page — remove controls and do nothing
+    if (!isModulePage()) {
+      document.getElementById("brot-topic-controls")?.remove();
+      return;
+    }
 
     let attempts = 0;
 
@@ -536,8 +816,8 @@
       if (attempts < 30) {
         setTimeout(waitForTopics, 300);
       } else {
-        console.log(LOG, "SPA navigation failed - forcing full reload");
-        location.reload();
+        console.log(LOG, "SPA navigation - topics not found, staying idle");
+        hideOverlay();
       }
     }
 
@@ -547,6 +827,8 @@
   // ── Kickoff ────────────────────────────────────────────────
 
   setTimeout(() => {
+    // Not a module page — stay idle; SPA watchers will handle entering one
+    if (!isModulePage()) return;
     if (getContainers().length > 0) {
       init();
     } else {

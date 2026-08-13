@@ -4,7 +4,7 @@
 // @version      5.2.6
 // @description  Remembers which topics you've expanded or collapsed on Brototype module pages — survives page reloads, SPA navigation, and re-renders. Persistent state per topic, Expand All / Collapse All with live counter + automatic read-more expansion, translucent overlay during batch ops, auto-scroll to last expanded topic, upload-safe, SPA-aware. Zero config, zero dependencies.
 // @author       Nabhan
-// @match        https://student.brototype.com/tasks/module/details*
+// @match        https://student.brototype.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=brototype.com
 // @grant        none
 // @license      MIT
@@ -19,6 +19,13 @@
 
   const PREFIX = "brot_topic5_";
   const LOG = "[TopicMemory]";
+
+  // The script now runs on the whole domain (see @match). Only act on
+  // module details pages; the SPA watchers stay alive everywhere so
+  // navigating into a module still triggers init.
+  function isModulePage() {
+    return /^\/tasks\/module\/details([/?]|$)/.test(location.pathname);
+  }
 
   // ── Overlay ─────────────────────────────────────────────────
 
@@ -314,6 +321,8 @@
   // ── Toggle All / Counter ────────────────────────────────────
 
   function toggleAll(expand) {
+    if (restoring) return;
+
     const containers = getContainers();
     const toToggle = containers.filter((c) =>
       expand ? !isExpanded(c) : isExpanded(c),
@@ -338,7 +347,7 @@
         hideOverlay();
         console.log(LOG, expand ? "Expand" : "Collapse", "All done");
       },
-      toToggle.length > 0 ? (toToggle.length - 1) * 300 + 400 : 400,
+      (toToggle.length - 1) * 300 + 400,
     );
   }
 
@@ -415,13 +424,17 @@
 
       c.addEventListener("click", function onClick(e) {
         const now = Date.now();
-        if (now - lastClick < 200) return;
+        // Only debounce synthetic clicks (our own c.click() batch ops).
+        // Real user clicks are never swallowed — e.g. a fast click right
+        // after Expand/Collapse All on the same topic still registers.
+        if (!e.isTrusted && now - lastClick < 200) return;
         lastClick = now;
 
-        // Check click was on the header area (not on expanded content inside the container)
+        // Check click was on the header area (not on expanded content inside the container).
+        // Synthetic clicks (c.click()) have target === c — treat those as header clicks too.
         let el = e.target;
-        let onHeader = false;
-        if (headerEl) {
+        let onHeader = el === c;
+        if (headerEl && !onHeader) {
           while (el && el !== c) {
             if (el === headerEl) {
               onHeader = true;
@@ -429,8 +442,6 @@
             }
             el = el.parentElement;
           }
-        } else {
-          onHeader = true;
         }
         if (!onHeader) return;
 
@@ -536,7 +547,12 @@
       return;
     }
 
-    const last = localStorage.getItem(lastKey());
+    let last = null;
+    try {
+      last = localStorage.getItem(lastKey());
+    } catch (e) {
+      console.warn(LOG, "localStorage lastKey read failed:", e);
+    }
     if (!last) {
       hideOverlay();
       return;
@@ -564,6 +580,121 @@
       hideOverlay();
     }, 600);
   }
+
+  // ── Upload tip toast ────────────────────────────────────────
+
+  // Shows a dismissible tip when the user clicks "Add Attachments" while
+  // other topics are still open. Auto-scroll to the last upload only
+  // works when the page is in a partially-expanded state, so the tip
+  // tells the user to Collapse All then reopen the topic they uploaded to.
+
+  let toastTimeout = null;
+
+  function hideUploadTip() {
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+      toastTimeout = null;
+    }
+    const el = document.getElementById("brot-upload-tip");
+    if (el) el.remove();
+  }
+
+  function showUploadTip() {
+    hideUploadTip();
+    if (!isModulePage()) return;
+    const containers = getContainers();
+    if (containers.filter(isExpanded).length <= 1) return;
+
+    const el = document.createElement("div");
+    el.id = "brot-upload-tip";
+    el.style.cssText = [
+      "position:fixed",
+      "top:16px",
+      "left:50%",
+      "transform:translateX(-50%)",
+      "z-index:100000",
+      "display:flex",
+      "align-items:center",
+      "gap:10px",
+      "max-width:480px",
+      "padding:12px 12px 12px 16px",
+      "border-radius:8px",
+      "border-left:5px solid #f59e0b",
+      "background:#fff",
+      "color:#1f2937",
+      "font:14px/1.5 sans-serif",
+      "font-weight:600",
+      "box-shadow:0 6px 24px rgba(0,0,0,0.35)",
+      "cursor:pointer",
+      "user-select:none",
+    ].join(";");
+
+    const msg = document.createElement("span");
+    msg.textContent =
+      "For the script to scroll to this upload on your next visit, tap Collapse, then reopen this topic.";
+    el.appendChild(msg);
+
+    const close = document.createElement("span");
+    close.textContent = "\u2715";
+    close.style.cssText = [
+      "margin-left:4px",
+      "color:#9ca3af",
+      "font-size:14px",
+      "font-weight:700",
+      "cursor:pointer",
+      "flex-shrink:0",
+    ].join(";");
+    close.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideUploadTip();
+    });
+    el.appendChild(close);
+
+    el.addEventListener("click", hideUploadTip);
+    document.body.appendChild(el);
+
+    el.animate(
+      [
+        { transform: "translateX(-50%) translateY(-80px)", opacity: 0 },
+        {
+          transform: "translateX(-50%) translateY(0)",
+          opacity: 1,
+          offset: 0.7,
+        },
+        { transform: "translateX(-50%) translateY(0)", opacity: 1 },
+      ],
+      { duration: 400, easing: "ease-out", fill: "forwards" },
+    )
+      .finished.then(() => {
+        el.animate(
+          [
+            { transform: "translateX(-50%) scale(1)" },
+            { transform: "translateX(-50%) scale(1.03)" },
+            { transform: "translateX(-50%) scale(1)" },
+          ],
+          { duration: 300, easing: "ease-in-out" },
+        );
+      })
+      .catch(() => {});
+
+    toastTimeout = setTimeout(hideUploadTip, 10000);
+  }
+
+  function onUploadAreaClick(e) {
+    if (!isModulePage()) return;
+    let node = e.target;
+    while (node && node !== document.body) {
+      if (node.nodeType === 1 && getComputedStyle(node).cursor === "pointer") {
+        if (/add\s+attachments/i.test(node.textContent || "")) {
+          setTimeout(showUploadTip, 50);
+          return;
+        }
+      }
+      node = node.parentElement;
+    }
+  }
+
+  document.addEventListener("click", onUploadAreaClick, true);
 
   // ── DOM watch (survive React re-renders) ───────────────────
 
@@ -631,10 +762,9 @@
   // ── Init ───────────────────────────────────────────────────
 
   function init() {
+    if (!isModulePage()) return;
     const containers = getContainers();
-    const strategy = usedFallback
-      ? "fallback (hash)"
-      : "primary (stable)";
+    const strategy = usedFallback ? "fallback (hash)" : "primary (stable)";
     console.log(LOG, "init \u2014", containers.length, "topics via", strategy);
 
     addControls();
@@ -662,12 +792,20 @@
 
   // L3 fix: cleanup on page unload
   window.addEventListener("unload", () => {
+    document.removeEventListener("click", onUploadAreaClick, true);
+    hideUploadTip();
     disconnectAllObservers();
   });
 
   function onUrlChange() {
     disconnectAllObservers();
-    showOverlay("Restoring topics\u2026");
+    hideOverlay();
+
+    // Left the module page — remove controls and do nothing
+    if (!isModulePage()) {
+      document.getElementById("brot-topic-controls")?.remove();
+      return;
+    }
 
     let attempts = 0;
 
@@ -680,8 +818,8 @@
       if (attempts < 30) {
         setTimeout(waitForTopics, 300);
       } else {
-        console.log(LOG, "SPA navigation failed - forcing full reload");
-        location.reload();
+        console.log(LOG, "SPA navigation - topics not found, staying idle");
+        hideOverlay();
       }
     }
 
@@ -691,6 +829,8 @@
   // ── Kickoff ────────────────────────────────────────────────
 
   setTimeout(() => {
+    // Not a module page — stay idle; SPA watchers will handle entering one
+    if (!isModulePage()) return;
     if (getContainers().length > 0) {
       init();
     } else {
