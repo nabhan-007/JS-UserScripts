@@ -59,7 +59,7 @@
 
     overlaySpin = spinner.animate(
       [{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }],
-      { duration: 800, iterations: Infinity },
+      { duration: 800, iterations: Infinity }
     );
 
     const label = document.createElement("div");
@@ -118,8 +118,8 @@
     const fallback = Array.from(
       document.querySelectorAll(
         'div[class*="css-"] > div[class*="css-"] > div[class*="css-"]' +
-          ' > div[class*="css-"]:not([class*="Mui"])',
-      ),
+          ' > div[class*="css-"]:not([class*="Mui"])'
+      )
     ).filter((c) => {
       const h6 = c.querySelector("h6.MuiTypography-h6");
       return h6 && /^topic\s+\d+/i.test(h6.textContent.trim());
@@ -218,7 +218,7 @@
 
     // Strategy 2: any toolbar-like container with inline-flex or flex
     const toolbars = document.querySelectorAll(
-      '[class*="MuiToolbar"], [class*="toolbar"], [role="toolbar"]',
+      '[class*="MuiToolbar"], [class*="toolbar"], [role="toolbar"]'
     );
     for (const bar of toolbars) {
       return { outer: bar, inner: bar.firstChild };
@@ -226,7 +226,7 @@
 
     // Strategy 3: top-right action area (last flex child of main header)
     const header = document.querySelector(
-      'header, [class*="Header"], [class*="header"], nav',
+      'header, [class*="Header"], [class*="header"], nav'
     );
     if (header) {
       const actions = header.querySelectorAll("button, [role='button']");
@@ -323,7 +323,7 @@
 
     const containers = getContainers();
     const toToggle = containers.filter((c) =>
-      expand ? !isExpanded(c) : isExpanded(c),
+      expand ? !isExpanded(c) : isExpanded(c)
     );
 
     if (toToggle.length === 0) return;
@@ -345,7 +345,7 @@
         hideOverlay();
         console.log(LOG, expand ? "Expand" : "Collapse", "All done");
       },
-      (toToggle.length - 1) * 300 + 400,
+      (toToggle.length - 1) * 300 + 400
     );
   }
 
@@ -382,7 +382,12 @@
           el.offsetHeight > 0 &&
           el.closest("button, [role='button']") === null
         ) {
-          el.closest("button, [role='button']")?.click() || el.click();
+          const btn = el.closest("button, [role='button']");
+          if (btn) {
+            btn.click();
+          } else {
+            el.click();
+          }
         }
       });
       // Also check buttons/role=button directly
@@ -451,8 +456,8 @@
         // M2 fix: wrap in try/catch
         try {
           if (newState) localStorage.setItem(lastKey(), title);
-        } catch (e) {
-          console.warn(LOG, "localStorage lastKey save failed:", e);
+        } catch (err) {
+          console.warn(LOG, "localStorage lastKey save failed:", err);
         }
 
         setTimeout(updateCounter, 500);
@@ -514,7 +519,7 @@
           scrollToLast();
         }
       },
-      pending.length * 200 + 300,
+      pending.length * 200 + 300
     );
   }
 
@@ -661,7 +666,7 @@
         },
         { transform: "translateX(-50%) translateY(0)", opacity: 1 },
       ],
-      { duration: 400, easing: "ease-out", fill: "forwards" },
+      { duration: 400, easing: "ease-out", fill: "forwards" }
     )
       .finished.then(() => {
         el.animate(
@@ -670,7 +675,7 @@
             { transform: "translateX(-50%) scale(1.03)" },
             { transform: "translateX(-50%) scale(1)" },
           ],
-          { duration: 300, easing: "ease-in-out" },
+          { duration: 300, easing: "ease-in-out" }
         );
       })
       .catch(() => {});
@@ -801,7 +806,8 @@
 
     // Left the module page — remove controls and do nothing
     if (!isModulePage()) {
-      document.getElementById("brot-topic-controls")?.remove();
+      const controls = document.getElementById("brot-topic-controls");
+      if (controls) controls.remove();
       return;
     }
 
@@ -835,7 +841,7 @@
       showOverlay("Loading\u2026");
       let attempts = 0;
 
-      function wait() {
+      const wait = function () {
         if (getContainers().length > 0) {
           init();
           return;
@@ -843,7 +849,7 @@
         attempts++;
         if (attempts < 30) setTimeout(wait, 300);
         else hideOverlay();
-      }
+      };
 
       wait();
     }
