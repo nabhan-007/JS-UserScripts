@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal Modal — Refined Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f6f6f6; min-height: 100vh; padding: 40px 24px; }
+  h1 { font-size: 21px; color: #141414; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #999; font-size: 13.5px; margin-bottom: 34px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; max-width: 880px; margin: 0 auto; }
+  .pick { border: 1px solid #e4e4e4; background: #fff; cursor: pointer; border-radius: 12px; padding: 20px 18px; text-align: left; display: flex; flex-direction: column; gap: 11px; transition: transform .15s, box-shadow .15s; font-family: inherit; }
+  .pick:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.1); }
+  .pick .swatch { height: 50px; border-radius: 8px; border: 1px solid #ececec; }
+  .pick .name { font-weight: 700; font-size: 14px; color: #141414; }
+  .pick .desc { font-size: 12px; color: #888; line-height: 1.45; }
+
+  .backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; background: rgba(20,20,20,.38); padding: 20px; }
+  .backdrop.open { display: flex; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; } }
+  .modal { width: 400px; max-width: 94vw; max-height: 86vh; overflow-y: auto; animation: pop .22s cubic-bezier(.2,.9,.3,1.15); }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+
+  .m-title { font-size: 16px; font-weight: 700; }
+  .m-sub { font-size: 12px; color: #999; margin-top: 2px; }
+  .m-sec { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: #b8b8b8; margin: 20px 0 6px; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 10px 0; }
+  .row:hover { background: #fafafa; }
+  .row .txt { flex: 1; }
+  .row .lbl { font-size: 13.5px; font-weight: 550; color: #1a1a1a; }
+  .row .dsc { font-size: 11.5px; color: #9a9a9a; margin-top: 1px; line-height: 1.4; }
+  .sw { position: relative; width: 34px; height: 20px; flex-shrink: 0; cursor: pointer; }
+  .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .sw .tr { position: absolute; inset: 0; border-radius: 6px; background: #e2e2e2; transition: background .15s; }
+  .sw .th { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 4px; background: #fff; transition: transform .15s; }
+  .sw input:checked + .tr { background: #111; }
+  .sw input:checked + .tr .th { transform: translateX(14px); }
+
+  .foot { margin-top: 18px; padding-top: 12px; border-top: 1px solid #efefef; font-size: 11px; color: #b8b8b8; display: flex; justify-content: space-between; align-items: center; }
+  kbd { font-family: inherit; background: #f2f2f2; border: 1px solid #e4e4e4; border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #888; }
+
+  /* ---- shared saved-data button styles ---- */
+  .sd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .sd-btn { border: 1px solid #e2e2e2; background: #fff; border-radius: 8px; padding: 9px 10px; font-family: inherit; font-size: 12px; font-weight: 550; color: #444; cursor: pointer; text-align: left; line-height: 1.35; transition: background .12s, border-color .12s; }
+  .sd-btn:hover { background: #f7f7f7; border-color: #d5d5d5; }
+  .sd-btn .k { display: block; font-size: 12.5px; font-weight: 650; color: #1a1a1a; margin-bottom: 1px; }
+  .sd-btn.danger { border-color: #f0cdcd; background: #fdf7f6; }
+  .sd-btn.danger .k { color: #c0392b; }
+  .sd-btn.danger:hover { background: #fbeeed; border-color: #e8b7b7; }
+
+  /* ================= A · CLASSIC+ ================= */
+  .v-a.modal { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 24px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+  .v-a .row + .row { border-top: 1px solid #efefef; }
+  .v-a .btn-done { width: 100%; border: none; cursor: pointer; margin-top: 18px; padding: 11px; border-radius: 8px; background: #111; color: #fff; font-weight: 650; font-size: 13.5px; font-family: inherit; }
+
+  /* ================= B · ACTION ROWS ================= */
+  .v-b.modal { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 24px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+  .v-b .row + .row { border-top: 1px solid #efefef; }
+  .v-b .act { display: flex; align-items: center; gap: 11px; width: 100%; background: none; border: none; cursor: pointer; font-family: inherit; padding: 10px 2px; text-align: left; border-radius: 6px; }
+  .v-b .act:hover { background: #fafafa; }
+  .v-b .act + .act { border-top: 1px solid #efefef; }
+  .v-b .act .ic { width: 26px; height: 26px; border-radius: 7px; background: #f4f4f4; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; flex-shrink: 0; }
+  .v-b .act .tt { flex: 1; }
+  .v-b .act .k { font-size: 13px; font-weight: 550; color: #1a1a1a; }
+  .v-b .act .d { font-size: 11px; color: #9a9a9a; margin-top: 1px; }
+  .v-b .act .chev { color: #c8c8c8; font-size: 14px; }
+  .v-b .act.danger .ic { background: #fdf0ef; color: #c0392b; }
+  .v-b .act.danger .k { color: #c0392b; }
+  .v-b .btn-done { width: 100%; border: none; cursor: pointer; margin-top: 18px; padding: 11px; border-radius: 8px; background: #111; color: #fff; font-weight: 650; font-size: 13.5px; font-family: inherit; }
+
+  /* ================= C · INSET PANEL ================= */
+  .v-c.modal { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 24px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+  .v-c .row + .row { border-top: 1px solid #efefef; }
+  .v-c .panel { background: #fafafa; border: 1px solid #eeeeee; border-radius: 10px; padding: 12px 14px 14px; margin-top: 4px; }
+  .v-c .panel .ph { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: #b8b8b8; margin-bottom: 4px; }
+  .v-c .sd-full { display: block; width: 100%; border: 1px solid #e2e2e2; background: #fff; border-radius: 8px; padding: 8px 11px; font-family: inherit; font-size: 12px; font-weight: 550; color: #444; cursor: pointer; text-align: left; margin-top: 8px; }
+  .v-c .sd-full:hover { background: #f7f7f7; }
+  .v-c .sd-full.danger { border-color: #f0cdcd; background: #fdf7f6; color: #c0392b; font-weight: 600; }
+  .v-c .sd-full.danger:hover { background: #fbeeed; }
+  .v-c .btn-done { width: 100%; border: none; cursor: pointer; margin-top: 18px; padding: 11px; border-radius: 8px; background: #111; color: #fff; font-weight: 650; font-size: 13.5px; font-family: inherit; }
+
+  /* ================= D · COMPACT / LINEAR ================= */
+  .v-d.modal { background: #fff; border: 1px solid #e6e6e6; border-radius: 10px; padding: 20px; box-shadow: 0 8px 28px rgba(0,0,0,.1); }
+  .v-d .m-title { font-size: 14.5px; }
+  .v-d .row { padding: 7px 0; }
+  .v-d .row + .row { border-top: 1px solid #f1f1f1; }
+  .v-d .lbl { font-size: 13px; }
+  .v-d .dsc { font-size: 11px; }
+  .v-d .sw { width: 30px; height: 18px; }
+  .v-d .sw .th { width: 12px; height: 12px; }
+  .v-d input:checked + .tr .th { transform: translateX(12px); }
+  .v-d .m-sec { margin: 14px 0 4px; }
+  .v-d .sd-btn { padding: 8px 10px; font-size: 11.5px; border-radius: 7px; }
+  .v-d .sd-btn .k { font-size: 12px; }
+  .v-d .btn-done { width: 100%; border: none; cursor: pointer; margin-top: 16px; padding: 9px; border-radius: 7px; background: #111; color: #fff; font-weight: 650; font-size: 12.5px; font-family: inherit; }
+  .v-d .foot { margin-top: 14px; padding-top: 10px; }
+</style>
+</head>
+<body>
+<h1>Minimal — refined variations</h1>
+<p class="sub">Your pick, polished. Focus: proper Saved-data actions, spacing, footers. Esc closes.</p>
+
+<div class="grid">
+  <button class="pick" onclick="openM('a')">
+    <div class="swatch" style="background:#fff;display:flex;align-items:flex-end;gap:4px;padding:8px;"><span style="flex:1;height:16px;border:1px solid #e2e2e2;border-radius:4px;"></span><span style="flex:1;height:16px;border:1px solid #f0cdcd;background:#fdf7f6;border-radius:4px;"></span></div>
+    <div><div class="name">A · Classic+</div><div class="desc">Saved data as two clear buttons — neutral + danger outline. Version footer.</div></div>
+  </button>
+  <button class="pick" onclick="openM('b')">
+    <div class="swatch" style="background:#fff;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:8px 10px;"><span style="font-size:9px;color:#555;">↺ &nbsp;Reset this module &nbsp; ›</span><span style="font-size:9px;color:#c0392b;">⚠ &nbsp;Reset ALL &nbsp; ›</span></div>
+    <div><div class="name">B · Action Rows</div><div class="desc">Saved actions as list rows with icons + chevrons. Very Linear/Notion.</div></div>
+  </button>
+  <button class="pick" onclick="openM('c')">
+    <div class="swatch" style="background:#fff;padding:8px;"><span style="display:block;height:26px;background:#fafafa;border:1px solid #eee;border-radius:5px;"></span></div>
+    <div><div class="name">C · Inset Panel</div><div class="desc">Saved data tucked into a soft gray panel — visually separated.</div></div>
+  </button>
+  <button class="pick" onclick="openM('d')">
+    <div class="swatch" style="background:#fff;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;"><span style="font-size:9px;color:#888;">compact · dense · kbd esc</span></div>
+    <div><div class="name">D · Compact</div><div class="desc">Tighter Linear-style density + esc hint footer. Least scroll.</div></div>
+  </button>
+</div>
+
+<div class="backdrop" id="bd" onclick="if(event.target===this)closeM()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const TOGGLES = [
+  ["Read-more on Expand All", 'Auto-click "Read more" when expanding all topics', true],
+  ["Read-more on restore", "Fully expand saved topics when the page loads", true],
+  ["Auto-scroll to last topic", "Scroll to your last expanded topic after restore", true],
+  ["Upload tip toast", "Remind me to Collapse before uploading attachments", true],
+  ["aniya nill", 'Show the "aniya nill" art on loading overlays (off = spinner)', false],
+];
+const HEAD = '<div class="m-title">Topic Memory Settings</div><div class="m-sub">Brototype \u00b7 Topic State Memory</div>';
+const FOOT = '<div class="foot"><span>v5.3.0 \u00b7 Topic State Memory</span><span><kbd>esc</kbd> close</span></div>';
+
+function rows() {
+  return TOGGLES.map(([l, d, on]) => `
+    <div class="row">
+      <div class="txt"><div class="lbl">${l}</div><div class="dsc">${d}</div></div>
+      <label class="sw"><input type="checkbox" ${on ? "checked" : ""}><span class="tr"><span class="th"></span></span></label>
+    </div>`).join("");
+}
+
+const BUILDERS = {
+  a() {
+    return HEAD + '<div class="m-sec">Preferences</div>' + rows() +
+      '<div class="m-sec">Saved data</div>' +
+      '<div class="sd-grid">' +
+        '<button class="sd-btn"><span class="k">Reset this module</span>Expand/collapse state only</button>' +
+        '<button class="sd-btn danger"><span class="k">Reset ALL modules</span>Every saved state</button>' +
+      '</div>' +
+      '<button class="btn-done" onclick="closeM()">Done</button>' + FOOT;
+  },
+  b() {
+    return HEAD + '<div class="m-sec">Preferences</div>' + rows() +
+      '<div class="m-sec">Saved data</div>' +
+      '<button class="act"><span class="ic">\u21ba</span><span class="tt"><span class="k">Reset this module</span><span class="d">Clear expand/collapse state for this module</span></span><span class="chev">\u203a</span></button>' +
+      '<button class="act danger"><span class="ic">\u26a0</span><span class="tt"><span class="k">Reset ALL modules</span><span class="d">Delete every module\u2019s saved state</span></span><span class="chev">\u203a</span></button>' +
+      '<button class="btn-done" onclick="closeM()">Done</button>' + FOOT;
+  },
+  c() {
+    return HEAD + '<div class="m-sec">Preferences</div>' + rows() +
+      '<div class="panel"><div class="ph">Saved data</div>' +
+        '<button class="sd-full">Reset this module\u2019s expand/collapse state</button>' +
+        '<button class="sd-full danger">Reset ALL modules\u2019 saved state</button>' +
+      '</div>' +
+      '<button class="btn-done" onclick="closeM()">Done</button>' + FOOT;
+  },
+  d() {
+    return HEAD + '<div class="m-sec">Preferences</div>' + rows() +
+      '<div class="m-sec">Saved data</div>' +
+      '<div class="sd-grid">' +
+        '<button class="sd-btn"><span class="k">Reset this module</span>This module only</button>' +
+        '<button class="sd-btn danger"><span class="k">Reset ALL modules</span>Everything, after confirm</button>' +
+      '</div>' +
+      '<button class="btn-done" onclick="closeM()">Done</button>' + FOOT;
+  },
+};
+
+function openM(v) {
+  const m = document.getElementById("modal");
+  m.className = "modal v-" + v;
+  m.innerHTML = BUILDERS[v]();
+  document.getElementById("bd").className = "backdrop open";
+}
+function closeM() { document.getElementById("bd").className = "backdrop"; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeM(); });
+</script>
+</body>
+</html>

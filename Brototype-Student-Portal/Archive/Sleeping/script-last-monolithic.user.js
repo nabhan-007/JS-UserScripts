@@ -305,395 +305,6 @@
   }
 
   // ════════════════════════════════════════════════════════════
-  // CORE — shared styles (used by settings modal + upload tip)
-  // ════════════════════════════════════════════════════════════
-
-  function ensureBrotStyles() {
-    if (document.getElementById("brot-styles")) return;
-    const st = document.createElement("style");
-    st.id = "brot-styles";
-    st.textContent = [
-      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e6e6e6;",
-      "border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.08);width:400px;",
-      "max-width:92vw;max-height:86vh;overflow:auto;padding:24px;",
-      "font:13.5px/1.5 Inter,sans-serif;color:#1a1a1a;}",
-      "#brot-settings-backdrop .brot-trow{display:flex;align-items:center;gap:14px;",
-      "padding:10px 2px;cursor:pointer;}",
-      "#brot-settings-backdrop .brot-trow:hover{background:#fafafa;}",
-      "#brot-settings-backdrop .brot-trow+.brot-trow{border-top:1px solid #efefef;}",
-      "#brot-settings-backdrop .brot-sec{font-size:10.5px;font-weight:700;",
-      "text-transform:uppercase;letter-spacing:0.9px;color:#b8b8b8;margin:20px 0 6px;}",
-      "#brot-settings-backdrop .brot-sdgrid{display:grid;grid-template-columns:1fr 1fr;",
-      "gap:8px;margin-top:4px;}",
-      "#brot-settings-backdrop .brot-sd{border:1px solid #e2e2e2;background:#fff;",
-      "border-radius:8px;padding:9px 10px;font:12px/1.35 Inter,sans-serif;color:#444;",
-      "cursor:pointer;text-align:left;transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#d5d5d5;}",
-      "#brot-settings-backdrop .brot-sd .brot-k{display:block;font-size:12.5px;",
-      "font-weight:650;color:#1a1a1a;margin-bottom:1px;}",
-      "#brot-settings-backdrop .brot-sd.brot-danger{border-color:#f0cdcd;background:#fdf7f6;}",
-      "#brot-settings-backdrop .brot-sd.brot-danger:hover{background:#fbeeed;border-color:#e8b7b7;}",
-      "#brot-settings-backdrop .brot-sd.brot-danger .brot-k{color:#c0392b;}",
-      "#brot-settings-backdrop a.brot-sd{display:block;text-decoration:none;}",
-      "#brot-settings-backdrop .brot-contact{display:flex;align-items:center;gap:4px;",
-      "padding:6px 10px;border:1px solid #e2e2e2;background:#fff;border-radius:7px;",
-      "font:600 12px/1 Inter,sans-serif;color:#1a1a1a;cursor:pointer;flex-shrink:0;",
-      "transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#d5d5d5;}",
-      "#brot-settings-backdrop .brot-contact .brot-arr{color:#8a8a8a;font-weight:400;}",
-      "#brot-settings-backdrop .brot-contact:hover .brot-arr{color:#333;}",
-      "#brot-settings-backdrop .brot-done{display:block;width:100%;margin-top:18px;",
-      "padding:11px;border:none;border-radius:8px;background:#111;color:#fff;",
-      "font:650 13.5px/1.2 Inter,sans-serif;cursor:pointer;transition:background 0.15s;}",
-      "#brot-settings-backdrop .brot-done:hover{background:#333;}",
-      "#brot-settings-backdrop .brot-foot{margin-top:18px;padding-top:12px;",
-      "border-top:1px solid #efefef;font-size:11px;color:#b8b8b8;",
-      "display:flex;justify-content:space-between;align-items:center;}",
-      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f2f2f2;",
-      "border:1px solid #e4e4e4;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
-      ".brot-switch{position:relative;display:inline-block;width:34px;height:20px;",
-      "flex-shrink:0;cursor:pointer;}",
-      ".brot-switch input{opacity:0;width:0;height:0;position:absolute;}",
-      ".brot-switch .brot-track{position:absolute;inset:0;background:#e2e2e2;",
-      "border-radius:6px;transition:background 0.15s;}",
-      ".brot-switch .brot-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;",
-      "border-radius:4px;background:#fff;transition:transform 0.15s;}",
-      ".brot-switch input:checked ~ .brot-track{background:#111;}",
-      ".brot-switch input:checked ~ .brot-track .brot-thumb{transform:translateX(14px);}",
-      ".brot-tip-act{border:none;background:#111;color:#fff;font:650 12px/1 Inter,sans-serif;",
-      "padding:8px 12px;border-radius:7px;cursor:pointer;flex-shrink:0;",
-      "transition:background 0.15s;}",
-      ".brot-tip-act:hover{background:#333;}",
-    ].join("\n");
-    document.head.appendChild(st);
-  }
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — settings UI (profile-popover entry + modal)
-  // ════════════════════════════════════════════════════════════
-  // Global: the header popover exists on every page, not just modules.
-  // Anchored by stable text ("Theme Mode"), never by MUI hash classes.
-
-  let settingsObserver = null;
-  let settingsScanTimer = null;
-
-  function injectSettingsRow(popover) {
-    if (popover.querySelector("#brot-settings-row")) return;
-    const rows = Array.from(popover.querySelectorAll("li"));
-    const profileRow = rows.find((li) =>
-      /my profile/i.test(li.textContent || ""),
-    );
-    const logoutRow = rows.find((li) =>
-      /log\s?out/i.test(li.textContent || ""),
-    );
-    if (!profileRow || !logoutRow) return;
-
-    const row = profileRow.cloneNode(true);
-    row.id = "brot-settings-row";
-    const label = Array.from(row.querySelectorAll("p")).find((p) =>
-      /my profile/i.test(p.textContent || ""),
-    );
-    if (label) label.textContent = "MNM Script Settings";
-    const svg = row.querySelector("svg");
-    if (svg) {
-      const gear = document.createElement("span");
-      gear.textContent = "\u2699\uFE0E";
-      gear.style.cssText = "font-size:20px;line-height:1;display:inline-block;";
-      svg.replaceWith(gear);
-    }
-    row.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openSettingsModal();
-    });
-    logoutRow.parentElement.insertBefore(row, logoutRow);
-  }
-
-  function scanForSettingsPopover() {
-    const papers = document.querySelectorAll(
-      ".MuiPopover-root .MuiPaper-root, .MuiModal-root .MuiPaper-root",
-    );
-    for (let i = 0; i < papers.length; i++) {
-      if ((papers[i].textContent || "").indexOf("Theme Mode") !== -1) {
-        injectSettingsRow(papers[i]);
-        return;
-      }
-    }
-  }
-
-  function watchSettingsPopover() {
-    if (settingsObserver) return;
-    settingsObserver = new MutationObserver(() => {
-      if (settingsScanTimer) clearTimeout(settingsScanTimer);
-      settingsScanTimer = setTimeout(scanForSettingsPopover, 150);
-    });
-    settingsObserver.observe(document.body, { childList: true, subtree: true });
-  }
-
-  function destroySettingsWatcher() {
-    if (settingsObserver) {
-      settingsObserver.disconnect();
-      settingsObserver = null;
-    }
-    if (settingsScanTimer) {
-      clearTimeout(settingsScanTimer);
-      settingsScanTimer = null;
-    }
-  }
-
-  function settingsEscHandler(e) {
-    if (e.key === "Escape") closeSettingsModal();
-  }
-
-  function closeSettingsModal() {
-    const b = document.getElementById("brot-settings-backdrop");
-    if (b) b.remove();
-    document.removeEventListener("keydown", settingsEscHandler, true);
-  }
-
-  function openSettingsModal() {
-    closeSettingsModal();
-    ensureBrotStyles();
-
-    const backdrop = document.createElement("div");
-    backdrop.id = "brot-settings-backdrop";
-    backdrop.style.cssText = [
-      "position:fixed",
-      "inset:0",
-      "z-index:100001",
-      "background:rgba(0,0,0,0.5)",
-      "display:flex",
-      "align-items:center",
-      "justify-content:center",
-    ].join(";");
-
-    const card = document.createElement("div");
-    card.className = "brot-card";
-
-    const trow = document.createElement("div");
-    trow.style.cssText =
-      "display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;";
-    const title = document.createElement("div");
-    title.textContent = "MNM Portal Companion";
-    title.style.cssText = "font-size:16px;font-weight:700;";
-    trow.appendChild(title);
-
-    const contact = document.createElement("button");
-    contact.type = "button";
-    contact.className = "brot-contact";
-    const ct = document.createElement("span");
-    ct.textContent = "Contact us ";
-    const ca = document.createElement("span");
-    ca.className = "brot-arr";
-    ca.textContent = "\u2197";
-    contact.appendChild(ct);
-    contact.appendChild(ca);
-    contact.addEventListener("click", () => {
-      window.open(
-        "https://mail.google.com/mail/?view=cm&fs=1&to=mhod.nabhan@gmail.com&su=" +
-          encodeURIComponent("MNM Portal Companion \u2014 feedback") +
-          "&body=" +
-          encodeURIComponent(
-            "Hi Nabhan!\n\nPage: " +
-              location.href +
-              "\nVersion: 1.0.0\n\nFeedback:\n",
-          ),
-        "_blank",
-        "noopener",
-      );
-    });
-    trow.appendChild(contact);
-    card.appendChild(trow);
-
-    function addToggle(key, label, desc) {
-      const row = document.createElement("label");
-      row.className = "brot-trow";
-      row.dataset.brotKey = key;
-      const txt = document.createElement("span");
-      txt.style.cssText = "flex:1;";
-      const lbl = document.createElement("div");
-      lbl.textContent = label;
-      lbl.style.cssText = "font-weight:550;font-size:13.5px;";
-      const dsc = document.createElement("div");
-      dsc.textContent = desc;
-      dsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
-      txt.appendChild(lbl);
-      txt.appendChild(dsc);
-      const sw = document.createElement("span");
-      sw.className = "brot-switch";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !!loadSettings()[key];
-      cb.addEventListener("change", () => {
-        const cur = loadSettings();
-        cur[key] = cb.checked;
-        saveSettings(cur);
-        bus.emit("settings:changed", key);
-      });
-      const track = document.createElement("span");
-      track.className = "brot-track";
-      const thumb = document.createElement("span");
-      thumb.className = "brot-thumb";
-      track.appendChild(thumb);
-      sw.appendChild(cb);
-      sw.appendChild(track);
-      row.appendChild(txt);
-      row.appendChild(sw);
-      card.appendChild(row);
-    }
-
-    addToggle(
-      "loadingImage",
-      "aniya nill",
-      "Show the \u201caniya nill\u201d art on loading overlays (off = spinner)",
-    );
-
-    // Exam stats: 3-way segmented control — Normal (default) in the middle
-    const examRow = document.createElement("div");
-    examRow.style.cssText = "padding:10px 2px;";
-    const exLbl = document.createElement("div");
-    exLbl.textContent = "Exam stats";
-    exLbl.style.cssText = "font-weight:550;font-size:13.5px;";
-    const exDsc = document.createElement("div");
-    exDsc.textContent = "What the exams-page stats card shows";
-    exDsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
-    examRow.appendChild(exLbl);
-    examRow.appendChild(exDsc);
-
-    const seg = document.createElement("div");
-    seg.style.cssText =
-      "display:flex;margin-top:9px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;";
-    const segOpts = [
-      ["delusion", "Delusion"],
-      ["normal", "Normal"],
-      ["last5", "Last 5 exams"],
-    ];
-    function renderSeg() {
-      seg.innerHTML = "";
-      segOpts.forEach((opt, i) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        const active = (loadSettings().examStats || "normal") === opt[0];
-        b.textContent = opt[1];
-        b.style.cssText = [
-          "flex:1",
-          "padding:8px 4px",
-          "border:none",
-          "cursor:pointer",
-          "font:600 11.5px/1.2 Inter,sans-serif",
-          "transition:background 0.12s",
-          active ? "background:#111;color:#fff" : "background:#fff;color:#444",
-        ].join(";");
-        b.addEventListener("click", () => {
-          const cur = loadSettings();
-          cur.examStats = opt[0];
-          saveSettings(cur);
-          bus.emit("settings:changed", "examStats");
-          renderSeg();
-        });
-        if (i > 0) b.style.borderLeft = "1px solid #e2e2e2";
-        seg.appendChild(b);
-      });
-    }
-    renderSeg();
-    examRow.appendChild(seg);
-    card.appendChild(examRow);
-
-    const sec1 = document.createElement("div");
-    sec1.textContent = "Preferences";
-    sec1.className = "brot-sec";
-    card.insertBefore(sec1, card.querySelector(".brot-trow"));
-
-    const dataTitle = document.createElement("div");
-    dataTitle.textContent = "Saved data";
-    dataTitle.className = "brot-sec";
-    card.appendChild(dataTitle);
-
-    const sdGrid = document.createElement("div");
-    sdGrid.className = "brot-sdgrid";
-    card.appendChild(sdGrid);
-
-    function addDataButton(k, hint, danger, fn) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "brot-sd" + (danger ? " brot-danger" : "");
-      const kk = document.createElement("span");
-      kk.className = "brot-k";
-      kk.textContent = k;
-      btn.appendChild(kk);
-      btn.appendChild(document.createTextNode(hint));
-      btn.addEventListener("click", fn);
-      sdGrid.appendChild(btn);
-    }
-
-    addDataButton(
-      "Reset this module",
-      "Expand/collapse state only",
-      false,
-      () => {
-        try {
-          localStorage.removeItem(moduleKey());
-          localStorage.removeItem(lastKey());
-        } catch (err) {
-          console.warn(LOG, "module reset failed:", err);
-        }
-        if (isModulePage()) {
-          updateCounter();
-          toggleAll(false);
-        }
-        closeSettingsModal();
-      },
-    );
-
-    addDataButton(
-      "Reset ALL modules",
-      "Every saved state, after confirm",
-      true,
-      () => {
-        if (!window.confirm("Delete saved state for every module?")) return;
-        try {
-          const keys = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && /^brot_topic\d+_/.test(k)) keys.push(k);
-          }
-          keys.forEach((k) => localStorage.removeItem(k));
-        } catch (err) {
-          console.warn(LOG, "full reset failed:", err);
-        }
-        if (isModulePage()) {
-          updateCounter();
-          toggleAll(false);
-        }
-        closeSettingsModal();
-      },
-    );
-
-    const done = document.createElement("button");
-    done.type = "button";
-    done.textContent = "Done";
-    done.className = "brot-done";
-    done.addEventListener("click", closeSettingsModal);
-    card.appendChild(done);
-
-    const foot = document.createElement("div");
-    foot.className = "brot-foot";
-    const fv = document.createElement("span");
-    fv.textContent = "v1.0.0 \u00b7 MNM Portal Companion";
-    const fk = document.createElement("span");
-    fk.textContent = "esc close";
-    foot.appendChild(fv);
-    foot.appendChild(fk);
-    card.appendChild(foot);
-
-    backdrop.appendChild(card);
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) closeSettingsModal();
-    });
-    document.addEventListener("keydown", settingsEscHandler, true);
-    document.body.appendChild(backdrop);
-  }
-
-  // ════════════════════════════════════════════════════════════
-  // ════════════════════════════════════════════════════════════
   // FEATURE — read-more
   // ════════════════════════════════════════════════════════════
 
@@ -1597,6 +1208,392 @@
   });
 
   // ════════════════════════════════════════════════════════════
+  // FEATURE — settings UI (profile-popover entry + modal)
+  // ════════════════════════════════════════════════════════════
+  // Global: the header popover exists on every page, not just modules.
+  // Anchored by stable text ("Theme Mode"), never by MUI hash classes.
+
+  let settingsObserver = null;
+  let settingsScanTimer = null;
+
+  function injectSettingsRow(popover) {
+    if (popover.querySelector("#brot-settings-row")) return;
+    const rows = Array.from(popover.querySelectorAll("li"));
+    const profileRow = rows.find((li) =>
+      /my profile/i.test(li.textContent || ""),
+    );
+    const logoutRow = rows.find((li) =>
+      /log\s?out/i.test(li.textContent || ""),
+    );
+    if (!profileRow || !logoutRow) return;
+
+    const row = profileRow.cloneNode(true);
+    row.id = "brot-settings-row";
+    const label = Array.from(row.querySelectorAll("p")).find((p) =>
+      /my profile/i.test(p.textContent || ""),
+    );
+    if (label) label.textContent = "MNM Script Settings";
+    const svg = row.querySelector("svg");
+    if (svg) {
+      const gear = document.createElement("span");
+      gear.textContent = "\u2699\uFE0E";
+      gear.style.cssText = "font-size:20px;line-height:1;display:inline-block;";
+      svg.replaceWith(gear);
+    }
+    row.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openSettingsModal();
+    });
+    logoutRow.parentElement.insertBefore(row, logoutRow);
+  }
+
+  function scanForSettingsPopover() {
+    const papers = document.querySelectorAll(
+      ".MuiPopover-root .MuiPaper-root, .MuiModal-root .MuiPaper-root",
+    );
+    for (let i = 0; i < papers.length; i++) {
+      if ((papers[i].textContent || "").indexOf("Theme Mode") !== -1) {
+        injectSettingsRow(papers[i]);
+        return;
+      }
+    }
+  }
+
+  function watchSettingsPopover() {
+    if (settingsObserver) return;
+    settingsObserver = new MutationObserver(() => {
+      if (settingsScanTimer) clearTimeout(settingsScanTimer);
+      settingsScanTimer = setTimeout(scanForSettingsPopover, 150);
+    });
+    settingsObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function destroySettingsWatcher() {
+    if (settingsObserver) {
+      settingsObserver.disconnect();
+      settingsObserver = null;
+    }
+    if (settingsScanTimer) {
+      clearTimeout(settingsScanTimer);
+      settingsScanTimer = null;
+    }
+  }
+
+  // Site-matched design tokens: Inter, 20px paper, #4286F5 primary,
+  // soft gray shadow (sampled from the live portal).
+  function ensureBrotStyles() {
+    if (document.getElementById("brot-styles")) return;
+    const st = document.createElement("style");
+    st.id = "brot-styles";
+    st.textContent = [
+      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e6e6e6;",
+      "border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.08);width:400px;",
+      "max-width:92vw;max-height:86vh;overflow:auto;padding:24px;",
+      "font:13.5px/1.5 Inter,sans-serif;color:#1a1a1a;}",
+      "#brot-settings-backdrop .brot-trow{display:flex;align-items:center;gap:14px;",
+      "padding:10px 2px;cursor:pointer;}",
+      "#brot-settings-backdrop .brot-trow:hover{background:#fafafa;}",
+      "#brot-settings-backdrop .brot-trow+.brot-trow{border-top:1px solid #efefef;}",
+      "#brot-settings-backdrop .brot-sec{font-size:10.5px;font-weight:700;",
+      "text-transform:uppercase;letter-spacing:0.9px;color:#b8b8b8;margin:20px 0 6px;}",
+      "#brot-settings-backdrop .brot-sdgrid{display:grid;grid-template-columns:1fr 1fr;",
+      "gap:8px;margin-top:4px;}",
+      "#brot-settings-backdrop .brot-sd{border:1px solid #e2e2e2;background:#fff;",
+      "border-radius:8px;padding:9px 10px;font:12px/1.35 Inter,sans-serif;color:#444;",
+      "cursor:pointer;text-align:left;transition:background 0.12s,border-color 0.12s;}",
+      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#d5d5d5;}",
+      "#brot-settings-backdrop .brot-sd .brot-k{display:block;font-size:12.5px;",
+      "font-weight:650;color:#1a1a1a;margin-bottom:1px;}",
+      "#brot-settings-backdrop .brot-sd.brot-danger{border-color:#f0cdcd;background:#fdf7f6;}",
+      "#brot-settings-backdrop .brot-sd.brot-danger:hover{background:#fbeeed;border-color:#e8b7b7;}",
+      "#brot-settings-backdrop .brot-sd.brot-danger .brot-k{color:#c0392b;}",
+      "#brot-settings-backdrop a.brot-sd{display:block;text-decoration:none;}",
+      "#brot-settings-backdrop .brot-contact{display:flex;align-items:center;gap:4px;",
+      "padding:6px 10px;border:1px solid #e2e2e2;background:#fff;border-radius:7px;",
+      "font:600 12px/1 Inter,sans-serif;color:#1a1a1a;cursor:pointer;flex-shrink:0;",
+      "transition:background 0.12s,border-color 0.12s;}",
+      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#d5d5d5;}",
+      "#brot-settings-backdrop .brot-contact .brot-arr{color:#8a8a8a;font-weight:400;}",
+      "#brot-settings-backdrop .brot-contact:hover .brot-arr{color:#333;}",
+      "#brot-settings-backdrop .brot-done{display:block;width:100%;margin-top:18px;",
+      "padding:11px;border:none;border-radius:8px;background:#111;color:#fff;",
+      "font:650 13.5px/1.2 Inter,sans-serif;cursor:pointer;transition:background 0.15s;}",
+      "#brot-settings-backdrop .brot-done:hover{background:#333;}",
+      "#brot-settings-backdrop .brot-foot{margin-top:18px;padding-top:12px;",
+      "border-top:1px solid #efefef;font-size:11px;color:#b8b8b8;",
+      "display:flex;justify-content:space-between;align-items:center;}",
+      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f2f2f2;",
+      "border:1px solid #e4e4e4;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
+      ".brot-switch{position:relative;display:inline-block;width:34px;height:20px;",
+      "flex-shrink:0;cursor:pointer;}",
+      ".brot-switch input{opacity:0;width:0;height:0;position:absolute;}",
+      ".brot-switch .brot-track{position:absolute;inset:0;background:#e2e2e2;",
+      "border-radius:6px;transition:background 0.15s;}",
+      ".brot-switch .brot-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;",
+      "border-radius:4px;background:#fff;transition:transform 0.15s;}",
+      ".brot-switch input:checked ~ .brot-track{background:#111;}",
+      ".brot-switch input:checked ~ .brot-track .brot-thumb{transform:translateX(14px);}",
+      ".brot-tip-act{border:none;background:#111;color:#fff;font:650 12px/1 Inter,sans-serif;",
+      "padding:8px 12px;border-radius:7px;cursor:pointer;flex-shrink:0;",
+      "transition:background 0.15s;}",
+      ".brot-tip-act:hover{background:#333;}",
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  function settingsEscHandler(e) {
+    if (e.key === "Escape") closeSettingsModal();
+  }
+
+  function closeSettingsModal() {
+    const b = document.getElementById("brot-settings-backdrop");
+    if (b) b.remove();
+    document.removeEventListener("keydown", settingsEscHandler, true);
+  }
+
+  function openSettingsModal() {
+    closeSettingsModal();
+    ensureBrotStyles();
+
+    const backdrop = document.createElement("div");
+    backdrop.id = "brot-settings-backdrop";
+    backdrop.style.cssText = [
+      "position:fixed",
+      "inset:0",
+      "z-index:100001",
+      "background:rgba(0,0,0,0.5)",
+      "display:flex",
+      "align-items:center",
+      "justify-content:center",
+    ].join(";");
+
+    const card = document.createElement("div");
+    card.className = "brot-card";
+
+    const trow = document.createElement("div");
+    trow.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;";
+    const title = document.createElement("div");
+    title.textContent = "MNM Portal Companion";
+    title.style.cssText = "font-size:16px;font-weight:700;";
+    trow.appendChild(title);
+
+    const contact = document.createElement("button");
+    contact.type = "button";
+    contact.className = "brot-contact";
+    const ct = document.createElement("span");
+    ct.textContent = "Contact us ";
+    const ca = document.createElement("span");
+    ca.className = "brot-arr";
+    ca.textContent = "\u2197";
+    contact.appendChild(ct);
+    contact.appendChild(ca);
+    contact.addEventListener("click", () => {
+      window.open(
+        "https://mail.google.com/mail/?view=cm&fs=1&to=mhod.nabhan@gmail.com&su=" +
+          encodeURIComponent("MNM Portal Companion \u2014 feedback") +
+          "&body=" +
+          encodeURIComponent(
+            "Hi Nabhan!\n\nPage: " +
+              location.href +
+              "\nVersion: 1.0.0\n\nFeedback:\n",
+          ),
+        "_blank",
+        "noopener",
+      );
+    });
+    trow.appendChild(contact);
+    card.appendChild(trow);
+
+    function addToggle(key, label, desc) {
+      const row = document.createElement("label");
+      row.className = "brot-trow";
+      row.dataset.brotKey = key;
+      const txt = document.createElement("span");
+      txt.style.cssText = "flex:1;";
+      const lbl = document.createElement("div");
+      lbl.textContent = label;
+      lbl.style.cssText = "font-weight:550;font-size:13.5px;";
+      const dsc = document.createElement("div");
+      dsc.textContent = desc;
+      dsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+      txt.appendChild(lbl);
+      txt.appendChild(dsc);
+      const sw = document.createElement("span");
+      sw.className = "brot-switch";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!loadSettings()[key];
+      cb.addEventListener("change", () => {
+        const cur = loadSettings();
+        cur[key] = cb.checked;
+        saveSettings(cur);
+        bus.emit("settings:changed", key);
+      });
+      const track = document.createElement("span");
+      track.className = "brot-track";
+      const thumb = document.createElement("span");
+      thumb.className = "brot-thumb";
+      track.appendChild(thumb);
+      sw.appendChild(cb);
+      sw.appendChild(track);
+      row.appendChild(txt);
+      row.appendChild(sw);
+      card.appendChild(row);
+    }
+
+    addToggle(
+      "loadingImage",
+      "aniya nill",
+      "Show the \u201caniya nill\u201d art on loading overlays (off = spinner)",
+    );
+
+    // Exam stats: 3-way segmented control — Normal (default) in the middle
+    const examRow = document.createElement("div");
+    examRow.style.cssText = "padding:10px 2px;";
+    const exLbl = document.createElement("div");
+    exLbl.textContent = "Exam stats";
+    exLbl.style.cssText = "font-weight:550;font-size:13.5px;";
+    const exDsc = document.createElement("div");
+    exDsc.textContent = "What the exams-page stats card shows";
+    exDsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+    examRow.appendChild(exLbl);
+    examRow.appendChild(exDsc);
+
+    const seg = document.createElement("div");
+    seg.style.cssText =
+      "display:flex;margin-top:9px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;";
+    const segOpts = [
+      ["delusion", "Delusion"],
+      ["normal", "Normal"],
+      ["last5", "Last 5 exams"],
+    ];
+    function renderSeg() {
+      seg.innerHTML = "";
+      segOpts.forEach((opt, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        const active = (loadSettings().examStats || "normal") === opt[0];
+        b.textContent = opt[1];
+        b.style.cssText = [
+          "flex:1",
+          "padding:8px 4px",
+          "border:none",
+          "cursor:pointer",
+          "font:600 11.5px/1.2 Inter,sans-serif",
+          "transition:background 0.12s",
+          active ? "background:#111;color:#fff" : "background:#fff;color:#444",
+        ].join(";");
+        b.addEventListener("click", () => {
+          const cur = loadSettings();
+          cur.examStats = opt[0];
+          saveSettings(cur);
+          bus.emit("settings:changed", "examStats");
+          renderSeg();
+        });
+        if (i > 0) b.style.borderLeft = "1px solid #e2e2e2";
+        seg.appendChild(b);
+      });
+    }
+    renderSeg();
+    examRow.appendChild(seg);
+    card.appendChild(examRow);
+
+    const sec1 = document.createElement("div");
+    sec1.textContent = "Preferences";
+    sec1.className = "brot-sec";
+    card.insertBefore(sec1, card.querySelector(".brot-trow"));
+
+    const dataTitle = document.createElement("div");
+    dataTitle.textContent = "Saved data";
+    dataTitle.className = "brot-sec";
+    card.appendChild(dataTitle);
+
+    const sdGrid = document.createElement("div");
+    sdGrid.className = "brot-sdgrid";
+    card.appendChild(sdGrid);
+
+    function addDataButton(k, hint, danger, fn) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "brot-sd" + (danger ? " brot-danger" : "");
+      const kk = document.createElement("span");
+      kk.className = "brot-k";
+      kk.textContent = k;
+      btn.appendChild(kk);
+      btn.appendChild(document.createTextNode(hint));
+      btn.addEventListener("click", fn);
+      sdGrid.appendChild(btn);
+    }
+
+    addDataButton(
+      "Reset this module",
+      "Expand/collapse state only",
+      false,
+      () => {
+        try {
+          localStorage.removeItem(moduleKey());
+          localStorage.removeItem(lastKey());
+        } catch (err) {
+          console.warn(LOG, "module reset failed:", err);
+        }
+        if (isModulePage()) {
+          updateCounter();
+          toggleAll(false);
+        }
+        closeSettingsModal();
+      },
+    );
+
+    addDataButton(
+      "Reset ALL modules",
+      "Every saved state, after confirm",
+      true,
+      () => {
+        if (!window.confirm("Delete saved state for every module?")) return;
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && /^brot_topic\d+_/.test(k)) keys.push(k);
+          }
+          keys.forEach((k) => localStorage.removeItem(k));
+        } catch (err) {
+          console.warn(LOG, "full reset failed:", err);
+        }
+        if (isModulePage()) {
+          updateCounter();
+          toggleAll(false);
+        }
+        closeSettingsModal();
+      },
+    );
+
+    const done = document.createElement("button");
+    done.type = "button";
+    done.textContent = "Done";
+    done.className = "brot-done";
+    done.addEventListener("click", closeSettingsModal);
+    card.appendChild(done);
+
+    const foot = document.createElement("div");
+    foot.className = "brot-foot";
+    const fv = document.createElement("span");
+    fv.textContent = "v1.0.0 \u00b7 MNM Portal Companion";
+    const fk = document.createElement("span");
+    fk.textContent = "esc close";
+    foot.appendChild(fv);
+    foot.appendChild(fk);
+    card.appendChild(foot);
+
+    backdrop.appendChild(card);
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) closeSettingsModal();
+    });
+    document.addEventListener("keydown", settingsEscHandler, true);
+    document.body.appendChild(backdrop);
+  }
+
   // ════════════════════════════════════════════════════════════
   // RUNTIME — teardown registry
   // ════════════════════════════════════════════════════════════
@@ -1695,142 +1692,6 @@
   };
 
   // ════════════════════════════════════════════════════════════
-  // RUNTIME — update checker
-  // ════════════════════════════════════════════════════════════
-
-  const UPDATE_URL =
-    "https://github.com/nabhan-007/JS-UserScripts/raw/refs/heads/main/Brototype-Student-Portal/script.user.js";
-  const LOCAL_VERSION = "1.0.0";
-
-  function parseVersion(text) {
-    const m = text.match(/@version\s+([^\s]+)/);
-    return m ? m[1] : null;
-  }
-
-  function cmpVersions(a, b) {
-    const pa = a.split(".").map(Number);
-    const pb = b.split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-      const x = pa[i] || 0;
-      const y = pb[i] || 0;
-      if (x !== y) return x - y;
-    }
-    return 0;
-  }
-
-  function showUpdateModal(remoteVer) {
-    ensureBrotStyles();
-
-    const backdrop = document.createElement("div");
-    backdrop.id = "brot-update-backdrop";
-    backdrop.style.cssText = [
-      "position:fixed",
-      "inset:0",
-      "z-index:100002",
-      "background:rgba(0,0,0,0.45)",
-      "display:flex",
-      "align-items:center",
-      "justify-content:center",
-    ].join(";");
-
-    const card = document.createElement("div");
-    card.style.cssText = [
-      "background:#fff",
-      "border:1px solid #e6e6e6",
-      "border-radius:12px",
-      "box-shadow:0 8px 32px rgba(0,0,0,0.12)",
-      "width:380px",
-      "max-width:90vw",
-      "padding:28px 24px 22px",
-      "font:13.5px/1.5 Inter,sans-serif",
-      "color:#1a1a1a",
-      "text-align:center",
-    ].join(";");
-
-    const icon = document.createElement("div");
-    icon.textContent = "\uD83D\uDD34";
-    icon.style.cssText = "font-size:28px;margin-bottom:10px;";
-    card.appendChild(icon);
-
-    const heading = document.createElement("div");
-    heading.textContent = "Update available";
-    heading.style.cssText = "font-size:16px;font-weight:700;margin-bottom:6px;";
-    card.appendChild(heading);
-
-    const detail = document.createElement("div");
-    detail.textContent =
-      "v" + LOCAL_VERSION + " \u2192 v" + remoteVer;
-    detail.style.cssText =
-      "font-size:13px;color:#666;margin-bottom:18px;";
-    card.appendChild(detail);
-
-    const dlBtn = document.createElement("a");
-    dlBtn.href = UPDATE_URL;
-    dlBtn.target = "_blank";
-    dlBtn.rel = "noopener";
-    dlBtn.textContent = "Update now";
-    dlBtn.style.cssText = [
-      "display:block",
-      "width:100%",
-      "padding:11px",
-      "border:none",
-      "border-radius:8px",
-      "background:#111",
-      "color:#fff",
-      "font:650 13.5px/1.2 Inter,sans-serif",
-      "cursor:pointer",
-      "text-decoration:none",
-      "text-align:center",
-      "transition:background 0.15s",
-    ].join(";");
-    card.appendChild(dlBtn);
-
-    const skip = document.createElement("button");
-    skip.type = "button";
-    skip.textContent = "Skip this version";
-    skip.style.cssText = [
-      "display:block",
-      "width:100%",
-      "margin-top:8px",
-      "padding:8px",
-      "border:none",
-      "background:transparent",
-      "color:#999",
-      "font:12px/1 Inter,sans-serif",
-      "cursor:pointer",
-    ].join(";");
-    skip.addEventListener("click", () => {
-      try { sessionStorage.setItem("brot_update_skip", "1"); } catch (e) {}
-      backdrop.remove();
-    });
-    card.appendChild(skip);
-
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) backdrop.remove();
-    });
-    backdrop.appendChild(card);
-    document.body.appendChild(backdrop);
-  }
-
-  function checkForUpdate() {
-    fetch(UPDATE_URL, { cache: "no-store" })
-      .then(function (r) {
-        return r.ok ? r.text() : null;
-      })
-      .then(function (txt) {
-        if (!txt) return;
-        const remote = parseVersion(txt);
-        if (remote && cmpVersions(remote, LOCAL_VERSION) > 0) {
-          try {
-            if (sessionStorage.getItem("brot_update_skip")) return;
-          } catch (e) {}
-          showUpdateModal(remote);
-        }
-      })
-      .catch(function () {});
-  }
-
-  // ════════════════════════════════════════════════════════════
   // RUNTIME — init, SPA navigation, unload, kickoff
   // ════════════════════════════════════════════════════════════
 
@@ -1904,7 +1765,6 @@
   initAutoScroll();
   initUploadTip();
   watchSettingsPopover();
-  checkForUpdate();
 
   // ── Kickoff ────────────────────────────────────────────────
 

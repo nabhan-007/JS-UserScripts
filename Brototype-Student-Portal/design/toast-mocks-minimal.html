@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Tip Toast — Minimal Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f6f6f6; min-height: 100vh; padding: 40px 24px; }
+  h1 { font-size: 21px; color: #141414; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #999; font-size: 13.5px; margin-bottom: 34px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; max-width: 880px; margin: 0 auto; }
+  .pick { border: 1px solid #e4e4e4; background: #fff; cursor: pointer; border-radius: 12px; padding: 20px 18px; text-align: left; transition: transform .15s, box-shadow .15s; font-family: inherit; }
+  .pick:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.1); }
+  .pick .name { font-weight: 700; font-size: 14px; color: #141414; }
+  .pick .desc { font-size: 12px; color: #888; line-height: 1.45; margin-top: 6px; }
+
+  /* toast shell */
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-90px);
+    z-index: 1000; display: flex; align-items: center; gap: 11px;
+    max-width: 480px; width: max-content;
+    animation: drop .35s cubic-bezier(.2,.9,.3,1.1) forwards;
+  }
+  @keyframes drop { to { transform: translateX(-50%) translateY(0); } }
+  .toast.bye { animation: rise .25s ease forwards; }
+  @keyframes rise { to { transform: translateX(-50%) translateY(-90px); opacity: 0; } }
+
+  .t-ic { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .t-txt { font-size: 12.5px; line-height: 1.45; font-weight: 500; }
+  .t-x { border: none; background: none; cursor: pointer; font-size: 13px; color: #b8b8b8; padding: 4px; flex-shrink: 0; font-family: inherit; }
+  .t-x:hover { color: #666; }
+  .t-act { border: none; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 650; padding: 7px 12px; border-radius: 7px; flex-shrink: 0; }
+
+  /* 1 · hairline flat */
+  .v1 { background: #fff; border: 1px solid #e6e6e6; border-radius: 10px; padding: 11px 13px; box-shadow: 0 6px 20px rgba(0,0,0,.08); color: #1a1a1a; }
+  .v1 .t-ic { background: #fdf0ef; color: #c0392b; }
+
+  /* 2 · left accent */
+  .v2 { background: #fff; border: 1px solid #e6e6e6; border-left: 3px solid #e8a13a; border-radius: 10px; padding: 11px 13px; box-shadow: 0 6px 20px rgba(0,0,0,.08); color: #1a1a1a; }
+  .v2 .t-ic { background: #fdf6ea; color: #b07a1e; }
+
+  /* 3 · dark inverse */
+  .v3 { background: #141414; border: 1px solid #2a2a2a; border-radius: 10px; padding: 11px 13px; box-shadow: 0 8px 24px rgba(0,0,0,.3); color: #f0f0f0; }
+  .v3 .t-ic { background: #2a2a2a; color: #ffb84d; }
+  .v3 .t-x { color: #777; }
+  .v3 .t-x:hover { color: #ddd; }
+
+  /* 4 · with action */
+  .v4 { background: #fff; border: 1px solid #e6e6e6; border-radius: 10px; padding: 11px 13px; box-shadow: 0 6px 20px rgba(0,0,0,.08); color: #1a1a1a; }
+  .v4 .t-ic { background: #fdf0ef; color: #c0392b; }
+  .v4 .t-act { background: #111; color: #fff; }
+  .v4 .t-act:hover { background: #333; }
+
+  .hint { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: 11.5px; color: #b8b8b8; }
+</style>
+</head>
+<body>
+<h1>Upload tip toast — Minimal set</h1>
+<p class="sub">Same language as modal A · Classic+ (white, hairlines, compact, red only for warnings). Click to preview.</p>
+
+<div class="grid">
+  <button class="pick" onclick="show('v1')">
+    <div class="name">1 · Hairline flat</div>
+    <div class="desc">Border instead of shadow-heavy paper, red-tinted icon chip, compact text.</div>
+  </button>
+  <button class="pick" onclick="show('v2')">
+    <div class="name">2 · Left accent</div>
+    <div class="desc">3px amber edge signals "tip" at a glance, icon stays subtle.</div>
+  </button>
+  <button class="pick" onclick="show('v3')">
+    <div class="name">3 · Dark inverse</div>
+    <div class="desc">Matches the black Done button / switches — strongest consistency.</div>
+  </button>
+  <button class="pick" onclick="show('v4')">
+    <div class="name">4 · With action</div>
+    <div class="desc">Adds a "Collapse all" button — one tap does the tip instead of just saying it.</div>
+  </button>
+</div>
+
+<div class="hint">Toasts stay until dismissed (✕ / click) so you can compare.</div>
+
+<script>
+const MSG = "For the script to scroll to this upload on your next visit, tap Collapse, then reopen this topic.";
+let cur = null;
+
+function show(v) {
+  if (cur) cur.remove();
+  const t = document.createElement("div");
+  t.className = "toast " + v;
+  const icons = { v1: "\u26a0\ufe0f", v2: "\ud83d\udca1", v3: "\u26a0\ufe0f", v4: "\u26a0\ufe0f" };
+  t.innerHTML =
+    '<div class="t-ic">' + icons[v] + '</div>' +
+    '<div class="t-txt">' + MSG + '</div>' +
+    (v === "v4" ? '<button class="t-act" onclick="dismiss()">Collapse all</button>' : '') +
+    '<button class="t-x" onclick="dismiss()">\u2715</button>';
+  t.addEventListener("click", (e) => { if (e.target === t || e.target.classList.contains("t-txt")) dismiss(); });
+  document.body.appendChild(t);
+  cur = t;
+}
+function dismiss() {
+  if (!cur) return;
+  const t = cur; cur = null;
+  t.classList.add("bye");
+  setTimeout(() => t.remove(), 260);
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") dismiss(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+// ==UserScript==
+// @name         MNM Portal Companion for Brototype
+// @namespace    http://tampermonkey.net/
+// @version      1.0.0
+// @description  Remembers which topics you've expanded or collapsed on Brototype module pages — survives page reloads, SPA navigation, and re-renders. Persistent state per topic, Expand All / Collapse All with live counter + automatic read-more expansion, translucent overlay during batch ops, auto-scroll to last expanded topic, upload-safe, SPA-aware. Optional exam-stats extras: delusion mode (100% pass rate) and a last-5-exams card. Zero config, zero dependencies.
+// @author       Nabhan
+// @match        https://student.brototype.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=brototype.com
+// @grant        none
+// @license      MIT
+// ==/UserScript==
+
+(function () {
+  "use strict";
+
+  // Modular layout: CORE (config, event bus, lock, overlay, DOM finder,
+  // state store) → FEATURES (read-more, batch controls, state memory,
+  // auto-scroll, upload tip, settings UI) → RUNTIME (teardown registry,
+  // DOM watch, SPA, init). Features talk through the bus, never into
+  // each other, so one fix can't ripple sideways.

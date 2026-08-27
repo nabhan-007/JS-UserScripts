@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MNM Script Settings — Modal Design Mocks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: #f4f5f7;
+    min-height: 100vh;
+    padding: 40px 24px;
+  }
+  h1 { font-size: 22px; color: #312f35; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #85838a; font-size: 14px; margin-bottom: 36px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .pick {
+    border: none; cursor: pointer; border-radius: 16px;
+    padding: 22px 18px; text-align: left;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: transform .15s ease, box-shadow .15s ease;
+    font-family: inherit;
+  }
+  .pick:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.14); }
+  .pick .swatch { height: 54px; border-radius: 10px; }
+  .pick .name { font-weight: 700; font-size: 15px; }
+  .pick .desc { font-size: 12.5px; opacity: .75; line-height: 1.4; }
+
+  /* ---- backdrop + shared modal shell ---- */
+  .backdrop {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(23, 25, 35, .45);
+    padding: 20px;
+  }
+  .backdrop.open { display: flex; animation: fade .2s ease; }
+  @keyframes fade { from { opacity: 0; } }
+  .modal {
+    width: 400px; max-width: 94vw; max-height: 86vh; overflow-y: auto;
+    animation: pop .25s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(.96); } }
+
+  /* ---- shared content structure ---- */
+  .m-title { font-size: 19px; font-weight: 800; letter-spacing: -.2px; }
+  .m-sub { font-size: 12.5px; margin-top: 3px; }
+  .m-sec { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin: 22px 0 8px; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 11px 0; }
+  .row .txt { flex: 1; }
+  .row .lbl { font-size: 14px; font-weight: 600; }
+  .row .dsc { font-size: 12px; margin-top: 2px; line-height: 1.4; }
+  .sw { position: relative; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; }
+  .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .sw .tr { position: absolute; inset: 0; border-radius: 24px; transition: background .18s; }
+  .sw .th { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .18s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .sw input:checked + .tr .th { transform: translateX(20px); }
+  .btn-done {
+    width: 100%; border: none; cursor: pointer; margin-top: 22px;
+    padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px;
+    font-family: inherit;
+  }
+  .btn-reset { background: none; border: none; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 600; padding: 9px 0; text-align: left; width: 100%; }
+  .btn-reset.danger { font-weight: 700; }
+
+  /* ================= 1. CURRENT (baseline) ================= */
+  .b-cur .swatch { background: linear-gradient(135deg,#fff 60%,#4286f5 60%); border: 1px solid #e3e5ea; }
+  .p-cur { background: #fff; color: #312f35; }
+  .v-cur.modal { background: #fff; border-radius: 20px; padding: 26px; box-shadow: rgba(149,157,165,.2) 0 8px 24px; }
+  .v-cur .m-sub { color: #85838a; }
+  .v-cur .m-sec { color: #a2a0a8; }
+  .v-cur .row + .row { border-top: 1px solid #f2f2f4; }
+  .v-cur .dsc { color: #85838a; }
+  .v-cur .tr { background: #d5d7dd; }
+  .v-cur input:checked + .tr { background: #4286f5; }
+  .v-cur .btn-done { background: #4286f5; color: #fff; }
+  .v-cur .btn-reset { color: #4286f5; }
+  .v-cur .btn-reset.danger { color: #d64545; }
+
+  /* ================= 2. GLASS ================= */
+  .b-glass .swatch { background: linear-gradient(135deg,#ff9a9e,#a18cd1,#5ee7df); }
+  body:has(.b-glass.open) { background: linear-gradient(135deg,#ff9a9e,#a18cd1,#5ee7df); }
+  .b-glass.open ~ .glass-bg { opacity: 1; }
+  .glass-bg { position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg,#ff9a9e 0%,#a18cd1 50%,#5ee7df 100%); opacity: 0; transition: opacity .3s; }
+  .p-glass { background: rgba(255,255,255,.28); color: #fff; }
+  .v-glass.modal { background: rgba(255,255,255,.14); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(255,255,255,.35); border-radius: 24px; padding: 26px; box-shadow: 0 20px 60px rgba(30,20,60,.35); }
+  .v-glass .m-sub, .v-glass .dsc { color: rgba(255,255,255,.75); }
+  .v-glass .m-sec { color: rgba(255,255,255,.6); }
+  .v-glass .row + .row { border-top: 1px solid rgba(255,255,255,.18); }
+  .v-glass .tr { background: rgba(255,255,255,.3); }
+  .v-glass input:checked + .tr { background: rgba(255,255,255,.85); }
+  .v-glass input:checked + .tr .th { background: #7c5cff; }
+  .v-glass .btn-done { background: rgba(255,255,255,.92); color: #5b3fd4; }
+  .v-glass .btn-reset { color: #fff; }
+  .v-glass .btn-reset.danger { color: #ffd7d7; }
+
+  /* ================= 3. DARK ================= */
+  .b-dark .swatch { background: linear-gradient(135deg,#17181c 60%,#7c9cff 60%); border: 1px solid #2a2b31; }
+  .p-dark { background: #17181c; color: #e8e8ea; }
+  .v-dark.modal { background: #1d1e24; border: 1px solid #2c2d35; border-radius: 18px; padding: 26px; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+  .v-dark .m-sub, .v-dark .dsc { color: #9a99a3; }
+  .v-dark .m-sec { color: #6d6c76; }
+  .v-dark .row + .row { border-top: 1px solid #26272e; }
+  .v-dark .tr { background: #3a3b44; }
+  .v-dark input:checked + .tr { background: #7c9cff; }
+  .v-dark .btn-done { background: #7c9cff; color: #14151a; }
+  .v-dark .btn-reset { color: #9fb4ff; }
+  .v-dark .btn-reset.danger { color: #ff7b7b; }
+
+  /* ================= 4. MINIMAL ================= */
+  .b-min .swatch { background: #fff; border: 1px solid #d9d9d9; }
+  .p-min { background: #fff; color: #111; }
+  .v-min.modal { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 24px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+  .v-min .m-title { font-size: 16px; font-weight: 700; letter-spacing: 0; }
+  .v-min .m-sub { color: #999; font-size: 12px; }
+  .v-min .m-sec { color: #bbb; }
+  .v-min .row { padding: 10px 0; }
+  .v-min .row + .row { border-top: 1px solid #efefef; }
+  .v-min .lbl { font-size: 13.5px; font-weight: 500; }
+  .v-min .dsc { color: #999; font-size: 11.5px; }
+  .v-min .sw { width: 34px; height: 20px; }
+  .v-min .sw .th { width: 14px; height: 14px; border-radius: 4px; top: 3px; left: 3px; box-shadow: none; }
+  .v-min input:checked + .tr .th { transform: translateX(14px); }
+  .v-min .tr { background: #e2e2e2; border-radius: 6px; }
+  .v-min input:checked + .tr { background: #111; }
+  .v-min .btn-done { background: #111; color: #fff; border-radius: 8px; }
+  .v-min .btn-reset { color: #666; font-weight: 500; }
+  .v-min .btn-reset.danger { color: #c0392b; font-weight: 600; }
+
+  /* ================= 5. IOS GROUPED ================= */
+  .b-ios .swatch { background: linear-gradient(135deg,#f2f2f7 55%,#34c759 55%); }
+  .p-ios { background: #f2f2f7; color: #1c1c1e; }
+  .v-ios.modal { background: #f2f2f7; border-radius: 22px; padding: 22px; box-shadow: 0 16px 44px rgba(0,0,0,.22); }
+  .v-ios .m-title { font-size: 17px; text-align: center; }
+  .v-ios .m-sub { color: #8e8e93; text-align: center; margin-bottom: 14px; }
+  .v-ios .group { background: #fff; border-radius: 12px; padding: 2px 16px; }
+  .v-ios .row + .row { border-top: 1px solid #f0f0f2; }
+  .v-ios .lbl { font-size: 14.5px; }
+  .v-ios .dsc { color: #8e8e93; }
+  .v-ios .m-sec { color: #8e8e93; margin: 18px 4px 7px; text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 600; }
+  .v-ios .tr { background: #e9e9ea; }
+  .v-ios input:checked + .tr { background: #34c759; }
+  .v-ios .btn-done { background: #007aff; color: #fff; border-radius: 14px; }
+  .v-ios .btn-reset { color: #007aff; }
+  .v-ios .btn-reset.danger { color: #ff3b30; }
+
+  /* ================= 6. GRADIENT HEADER ================= */
+  .b-grad .swatch { background: linear-gradient(90deg,#4286f5,#9b5cf6); }
+  .p-grad { background: #fff; color: #312f35; }
+  .v-grad.modal { background: #fff; border-radius: 18px; padding: 0 26px 26px; box-shadow: 0 18px 48px rgba(76,68,182,.35); overflow: hidden; }
+  .v-grad .head { margin: 0 -26px 20px; padding: 22px 26px; background: linear-gradient(120deg,#4286f5,#9b5cf6); color: #fff; }
+  .v-grad .m-sub { color: rgba(255,255,255,.8); }
+  .v-grad .m-sec { color: #b3b1bb; }
+  .v-grad .row + .row { border-top: 1px solid #f1f0f5; }
+  .v-grad .dsc { color: #85838a; }
+  .v-grad .tr { background: #d9d6e8; }
+  .v-grad input:checked + .tr { background: linear-gradient(90deg,#4286f5,#9b5cf6); }
+  .v-grad .btn-done { background: linear-gradient(90deg,#4286f5,#9b5cf6); color: #fff; }
+  .v-grad .btn-reset { color: #7052d8; }
+  .v-grad .btn-reset.danger { color: #e05252; }
+</style>
+</head>
+<body>
+<div class="glass-bg"></div>
+<h1>MNM Script Settings — pick a design</h1>
+<p class="sub">Click a card to preview that modal style. Esc or backdrop click closes. Toggles are live.</p>
+
+<div class="grid">
+  <button class="pick b-cur p-cur" onclick="openM('cur')">
+    <div class="swatch"></div>
+    <div><div class="name">1 · Current</div><div class="desc">Today's design — baseline for comparison</div></div>
+  </button>
+  <button class="pick b-glass p-glass" onclick="openM('glass')">
+    <div class="swatch"></div>
+    <div><div class="name">2 · Glass</div><div class="desc">Frosted glass over a colorful blur</div></div>
+  </button>
+  <button class="pick b-dark p-dark" onclick="openM('dark')">
+    <div class="swatch"></div>
+    <div><div class="name">3 · Dark</div><div class="desc">True dark card, periwinkle accent</div></div>
+  </button>
+  <button class="pick b-min p-min" onclick="openM('min')">
+    <div class="swatch"></div>
+    <div><div class="name">4 · Minimal</div><div class="desc">Flat, compact, monochrome — Notion-ish</div></div>
+  </button>
+  <button class="pick b-ios p-ios" onclick="openM('ios')">
+    <div class="swatch"></div>
+    <div><div class="name">5 · iOS Grouped</div><div class="desc">Inset grouped lists, green switches</div></div>
+  </button>
+  <button class="pick b-grad p-grad" onclick="openM('grad')">
+    <div class="swatch"></div>
+    <div><div class="name">6 · Gradient Header</div><div class="desc">Blue→violet band + gradient Done</div></div>
+  </button>
+</div>
+
+<div class="backdrop" id="bd" onclick="if(event.target===this)closeM()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const TOGGLES = [
+  ["Read-more on Expand All", 'Auto-click "Read more" when expanding all topics', true],
+  ["Read-more on restore", "Fully expand saved topics when the page loads", true],
+  ["Auto-scroll to last topic", "Scroll to your last expanded topic after restore", true],
+  ["Upload tip toast", "Remind me to Collapse before uploading attachments", true],
+  ["aniya nill", 'Show the "aniya nill" art on loading overlays (off = spinner)', false],
+];
+
+function build(variant) {
+  const m = document.getElementById("modal");
+  m.className = "modal v-" + variant;
+  let rows = TOGGLES.map(([l, d, on], i) => `
+    <div class="row">
+      <div class="txt"><div class="lbl">${l}</div><div class="dsc">${d}</div></div>
+      <label class="sw"><input type="checkbox" ${on ? "checked" : ""}><span class="tr"><span class="th"></span></span></label>
+    </div>`).join("");
+  const head = variant === "grad"
+    ? '<div class="head"><div class="m-title">Topic Memory Settings</div><div class="m-sub">Brototype · Topic State Memory</div></div>'
+    : '<div class="m-title">Topic Memory Settings</div><div class="m-sub">Brototype · Topic State Memory</div>';
+  m.innerHTML = head +
+    '<div class="m-sec">Preferences</div>' + rows +
+    '<div class="m-sec">Saved data</div>' +
+    '<button class="btn-reset">Reset this module\u2019s expand/collapse state</button>' +
+    '<button class="btn-reset danger">Reset ALL modules\u2019 saved state</button>' +
+    '<button class="btn-done" onclick="closeM()">Done</button>';
+}
+
+function openM(v) {
+  build(v);
+  document.getElementById("bd").className = "backdrop open b-" + v;
+}
+function closeM() {
+  document.getElementById("bd").className = "backdrop";
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeM(); });
+</script>
+</body>
+</html>
