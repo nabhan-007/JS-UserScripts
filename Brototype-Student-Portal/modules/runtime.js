@@ -101,7 +101,7 @@
 
   const UPDATE_URL =
     "https://raw.githubusercontent.com/nabhan-007/JS-UserScripts/main/Brototype-Student-Portal/script.user.js";
-  const LOCAL_VERSION = "1.0.0";
+  const LOCAL_VERSION = "__SCRIPT_VERSION__";
 
   function parseVersion(text) {
     const m = text.match(/@version\s+([^\s]+)/);
