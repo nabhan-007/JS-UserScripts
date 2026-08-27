@@ -1699,7 +1699,7 @@
   // ════════════════════════════════════════════════════════════
 
   const UPDATE_URL =
-    "https://github.com/nabhan-007/JS-UserScripts/raw/refs/heads/main/Brototype-Student-Portal/script.user.js";
+    "https://raw.githubusercontent.com/nabhan-007/JS-UserScripts/main/Brototype-Student-Portal/script.user.js";
   const LOCAL_VERSION = "1.0.0";
 
   function parseVersion(text) {
