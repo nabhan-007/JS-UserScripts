@@ -1721,7 +1721,12 @@
   function showUpdateModal(remoteVer) {
     ensureBrotStyles();
 
-    const backdrop = document.createElement("div");
+    function close() {
+      var b = document.getElementById("brot-update-backdrop");
+      if (b) b.remove();
+    }
+
+    var backdrop = document.createElement("div");
     backdrop.id = "brot-update-backdrop";
     backdrop.style.cssText = [
       "position:fixed",
@@ -1733,42 +1738,65 @@
       "justify-content:center",
     ].join(";");
 
-    const card = document.createElement("div");
+    var card = document.createElement("div");
     card.style.cssText = [
       "background:#fff",
       "border:1px solid #e6e6e6",
-      "border-radius:12px",
-      "box-shadow:0 8px 32px rgba(0,0,0,0.12)",
-      "width:380px",
+      "border-radius:14px",
+      "box-shadow:0 12px 40px rgba(0,0,0,0.15)",
+      "width:370px",
       "max-width:90vw",
-      "padding:28px 24px 22px",
+      "padding:0",
       "font:13.5px/1.5 Inter,sans-serif",
       "color:#1a1a1a",
-      "text-align:center",
+      "overflow:hidden",
     ].join(";");
 
-    const icon = document.createElement("div");
-    icon.textContent = "\uD83D\uDD34";
-    icon.style.cssText = "font-size:28px;margin-bottom:10px;";
-    card.appendChild(icon);
+    // Header band
+    var hdr = document.createElement("div");
+    hdr.style.cssText = [
+      "background:linear-gradient(135deg,#f8f9fa 0%,#eef0f2 100%)",
+      "padding:22px 24px 18px",
+      "border-bottom:1px solid #eee",
+      "text-align:center",
+    ].join(";");
+    card.appendChild(hdr);
 
-    const heading = document.createElement("div");
+    var icon = document.createElement("div");
+    icon.textContent = "\u2191";
+    icon.style.cssText = [
+      "width:36px",
+      "height:36px",
+      "border-radius:50%",
+      "background:#111",
+      "color:#fff",
+      "font-size:18px",
+      "line-height:36px",
+      "text-align:center",
+      "margin:0 auto 10px",
+    ].join(";");
+    hdr.appendChild(icon);
+
+    var heading = document.createElement("div");
     heading.textContent = "Update available";
-    heading.style.cssText = "font-size:16px;font-weight:700;margin-bottom:6px;";
-    card.appendChild(heading);
+    heading.style.cssText = "font-size:15px;font-weight:700;margin-bottom:4px;";
+    hdr.appendChild(heading);
 
-    const detail = document.createElement("div");
-    detail.textContent =
-      "v" + LOCAL_VERSION + " \u2192 v" + remoteVer;
-    detail.style.cssText =
-      "font-size:13px;color:#666;margin-bottom:18px;";
-    card.appendChild(detail);
+    var detail = document.createElement("div");
+    detail.textContent = "v" + LOCAL_VERSION + " \u2192 v" + remoteVer;
+    detail.style.cssText = "font-size:12.5px;color:#888;";
+    hdr.appendChild(detail);
 
-    const dlBtn = document.createElement("a");
+    // Body
+    var body = document.createElement("div");
+    body.style.cssText = "padding:18px 24px 20px;";
+
+    var dlBtn = document.createElement("a");
     dlBtn.href = UPDATE_URL;
     dlBtn.target = "_blank";
     dlBtn.rel = "noopener";
     dlBtn.textContent = "Update now";
+    dlBtn.addEventListener("click", close);
     dlBtn.style.cssText = [
       "display:block",
       "width:100%",
@@ -1777,36 +1805,43 @@
       "border-radius:8px",
       "background:#111",
       "color:#fff",
-      "font:650 13.5px/1.2 Inter,sans-serif",
+      "font:650 13px/1.2 Inter,sans-serif",
       "cursor:pointer",
       "text-decoration:none",
       "text-align:center",
       "transition:background 0.15s",
     ].join(";");
-    card.appendChild(dlBtn);
+    dlBtn.addEventListener("mouseenter", function () { dlBtn.style.background = "#333"; });
+    dlBtn.addEventListener("mouseleave", function () { dlBtn.style.background = "#111"; });
+    body.appendChild(dlBtn);
 
-    const skip = document.createElement("button");
+    var skip = document.createElement("button");
     skip.type = "button";
     skip.textContent = "Skip this version";
     skip.style.cssText = [
       "display:block",
       "width:100%",
-      "margin-top:8px",
+      "margin-top:6px",
       "padding:8px",
       "border:none",
       "background:transparent",
-      "color:#999",
+      "color:#aaa",
       "font:12px/1 Inter,sans-serif",
       "cursor:pointer",
+      "border-radius:6px",
+      "transition:color 0.12s",
     ].join(";");
-    skip.addEventListener("click", () => {
+    skip.addEventListener("mouseenter", function () { skip.style.color = "#666"; });
+    skip.addEventListener("mouseleave", function () { skip.style.color = "#aaa"; });
+    skip.addEventListener("click", function () {
       try { sessionStorage.setItem("brot_update_skip", "1"); } catch (e) {}
-      backdrop.remove();
+      close();
     });
-    card.appendChild(skip);
+    body.appendChild(skip);
 
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) backdrop.remove();
+    card.appendChild(body);
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) close();
     });
     backdrop.appendChild(card);
     document.body.appendChild(backdrop);
