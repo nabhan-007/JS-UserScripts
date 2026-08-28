@@ -10,6 +10,51 @@
     examStats: "normal", // "normal" | "delusion" | "last5"
   };
 
+  // ════════════════════════════════════════════════════════════
+  // CORE — color palette (single source of truth)
+  // ════════════════════════════════════════════════════════════
+
+  var COLORS = {
+    // neutrals
+    textPrimary:    "#1a1a1a",
+    textSecondary:  "#444",
+    textMuted:      "#888",
+    textFaint:      "#b8b8b8",
+    surface:        "#fff",
+    surfaceHover:   "#f7f7f7",
+    borderLight:    "#e2e2e2",
+    borderSeparator:"#efefef",
+    // action
+    actionPrimary:      "#111",
+    actionPrimaryHover: "#333",
+    // danger
+    dangerText:        "#c0392b",
+    dangerBg:          "#fdf7f6",
+    dangerBgHover:     "#fbeeed",
+    dangerBorder:      "#f0cdcd",
+    dangerBorderHover: "#e8b7b7",
+    // status
+    statusPass:    "#109d58",
+    statusFail:    "#db4437",
+    statusAbsent:  "#9a9a9a",
+    // accent (topic counter)
+    accentText:  "#1a6ddb",
+    accentBg:    "#eaf1fc",
+    // warning
+    warningIconBg: "#fdf0ef",
+    // overlay
+    overlayScrim: "rgba(0,0,0,0.5)",
+    shadowCard:   "rgba(0,0,0,0.08)",
+    shadowLifted: "rgba(0,0,0,0.15)",
+    // dark mode
+    dmBorder:       "rgba(255,255,255,.25)",
+    dmSegmentBg:    "rgba(255,255,255,.06)",
+    dmHover:        "rgba(255,255,255,.12)",
+    dmAccentText:   "#7db4f5",
+    dmAccentBg:     "rgba(125,180,245,.2)",
+    dmSpinner:      "rgba(255,255,255,0.25)",
+  };
+
   function loadSettings() {
     try {
       return Object.assign(
@@ -92,7 +137,7 @@
       "position:fixed",
       "inset:0",
       "z-index:99999",
-      "background:rgba(0,0,0,0.4)",
+      "background:rgba(0,0,0,0.5)",
       "display:flex",
       "flex-direction:column",
       "align-items:center",
@@ -292,13 +337,13 @@
     const st = document.createElement("style");
     st.id = "brot-styles";
     st.textContent = [
-      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e6e6e6;",
+      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e2e2e2;",
       "border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.08);width:400px;",
       "max-width:92vw;max-height:86vh;overflow:auto;padding:24px;",
       "font:13.5px/1.5 Inter,sans-serif;color:#1a1a1a;}",
       "#brot-settings-backdrop .brot-trow{display:flex;align-items:center;gap:14px;",
       "padding:10px 2px;cursor:pointer;}",
-      "#brot-settings-backdrop .brot-trow:hover{background:#fafafa;}",
+      "#brot-settings-backdrop .brot-trow:hover{background:#f7f7f7;}",
       "#brot-settings-backdrop .brot-trow+.brot-trow{border-top:1px solid #efefef;}",
       "#brot-settings-backdrop .brot-sec{font-size:10.5px;font-weight:700;",
       "text-transform:uppercase;letter-spacing:0.9px;color:#b8b8b8;margin:20px 0 6px;}",
@@ -307,7 +352,7 @@
       "#brot-settings-backdrop .brot-sd{border:1px solid #e2e2e2;background:#fff;",
       "border-radius:8px;padding:9px 10px;font:12px/1.35 Inter,sans-serif;color:#444;",
       "cursor:pointer;text-align:left;transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#d5d5d5;}",
+      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#e2e2e2;}",
       "#brot-settings-backdrop .brot-sd .brot-k{display:block;font-size:12.5px;",
       "font-weight:650;color:#1a1a1a;margin-bottom:1px;}",
       "#brot-settings-backdrop .brot-sd.brot-danger{border-color:#f0cdcd;background:#fdf7f6;}",
@@ -318,8 +363,8 @@
       "padding:6px 10px;border:1px solid #e2e2e2;background:#fff;border-radius:7px;",
       "font:600 12px/1 Inter,sans-serif;color:#1a1a1a;cursor:pointer;flex-shrink:0;",
       "transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#d5d5d5;}",
-      "#brot-settings-backdrop .brot-contact .brot-arr{color:#8a8a8a;font-weight:400;}",
+      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#e2e2e2;}",
+      "#brot-settings-backdrop .brot-contact .brot-arr{color:#888;font-weight:400;}",
       "#brot-settings-backdrop .brot-contact:hover .brot-arr{color:#333;}",
       "#brot-settings-backdrop .brot-done{display:block;width:100%;margin-top:18px;",
       "padding:11px;border:none;border-radius:8px;background:#111;color:#fff;",
@@ -328,8 +373,8 @@
       "#brot-settings-backdrop .brot-foot{margin-top:18px;padding-top:12px;",
       "border-top:1px solid #efefef;font-size:11px;color:#b8b8b8;",
       "display:flex;justify-content:space-between;align-items:center;}",
-      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f2f2f2;",
-      "border:1px solid #e4e4e4;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
+      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f7f7f7;",
+      "border:1px solid #e2e2e2;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
       ".brot-switch{position:relative;display:inline-block;width:34px;height:20px;",
       "flex-shrink:0;cursor:pointer;}",
       ".brot-switch input{opacity:0;width:0;height:0;position:absolute;}",

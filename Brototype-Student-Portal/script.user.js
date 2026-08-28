@@ -31,6 +31,51 @@
     examStats: "normal", // "normal" | "delusion" | "last5"
   };
 
+  // ════════════════════════════════════════════════════════════
+  // CORE — color palette (single source of truth)
+  // ════════════════════════════════════════════════════════════
+
+  var COLORS = {
+    // neutrals
+    textPrimary:    "#1a1a1a",
+    textSecondary:  "#444",
+    textMuted:      "#888",
+    textFaint:      "#b8b8b8",
+    surface:        "#fff",
+    surfaceHover:   "#f7f7f7",
+    borderLight:    "#e2e2e2",
+    borderSeparator:"#efefef",
+    // action
+    actionPrimary:      "#111",
+    actionPrimaryHover: "#333",
+    // danger
+    dangerText:        "#c0392b",
+    dangerBg:          "#fdf7f6",
+    dangerBgHover:     "#fbeeed",
+    dangerBorder:      "#f0cdcd",
+    dangerBorderHover: "#e8b7b7",
+    // status
+    statusPass:    "#109d58",
+    statusFail:    "#db4437",
+    statusAbsent:  "#9a9a9a",
+    // accent (topic counter)
+    accentText:  "#1a6ddb",
+    accentBg:    "#eaf1fc",
+    // warning
+    warningIconBg: "#fdf0ef",
+    // overlay
+    overlayScrim: "rgba(0,0,0,0.5)",
+    shadowCard:   "rgba(0,0,0,0.08)",
+    shadowLifted: "rgba(0,0,0,0.15)",
+    // dark mode
+    dmBorder:       "rgba(255,255,255,.25)",
+    dmSegmentBg:    "rgba(255,255,255,.06)",
+    dmHover:        "rgba(255,255,255,.12)",
+    dmAccentText:   "#7db4f5",
+    dmAccentBg:     "rgba(125,180,245,.2)",
+    dmSpinner:      "rgba(255,255,255,0.25)",
+  };
+
   function loadSettings() {
     try {
       return Object.assign(
@@ -113,7 +158,7 @@
       "position:fixed",
       "inset:0",
       "z-index:99999",
-      "background:rgba(0,0,0,0.4)",
+      "background:rgba(0,0,0,0.5)",
       "display:flex",
       "flex-direction:column",
       "align-items:center",
@@ -313,13 +358,13 @@
     const st = document.createElement("style");
     st.id = "brot-styles";
     st.textContent = [
-      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e6e6e6;",
+      "#brot-settings-backdrop .brot-card{background:#fff;border:1px solid #e2e2e2;",
       "border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.08);width:400px;",
       "max-width:92vw;max-height:86vh;overflow:auto;padding:24px;",
       "font:13.5px/1.5 Inter,sans-serif;color:#1a1a1a;}",
       "#brot-settings-backdrop .brot-trow{display:flex;align-items:center;gap:14px;",
       "padding:10px 2px;cursor:pointer;}",
-      "#brot-settings-backdrop .brot-trow:hover{background:#fafafa;}",
+      "#brot-settings-backdrop .brot-trow:hover{background:#f7f7f7;}",
       "#brot-settings-backdrop .brot-trow+.brot-trow{border-top:1px solid #efefef;}",
       "#brot-settings-backdrop .brot-sec{font-size:10.5px;font-weight:700;",
       "text-transform:uppercase;letter-spacing:0.9px;color:#b8b8b8;margin:20px 0 6px;}",
@@ -328,7 +373,7 @@
       "#brot-settings-backdrop .brot-sd{border:1px solid #e2e2e2;background:#fff;",
       "border-radius:8px;padding:9px 10px;font:12px/1.35 Inter,sans-serif;color:#444;",
       "cursor:pointer;text-align:left;transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#d5d5d5;}",
+      "#brot-settings-backdrop .brot-sd:hover{background:#f7f7f7;border-color:#e2e2e2;}",
       "#brot-settings-backdrop .brot-sd .brot-k{display:block;font-size:12.5px;",
       "font-weight:650;color:#1a1a1a;margin-bottom:1px;}",
       "#brot-settings-backdrop .brot-sd.brot-danger{border-color:#f0cdcd;background:#fdf7f6;}",
@@ -339,8 +384,8 @@
       "padding:6px 10px;border:1px solid #e2e2e2;background:#fff;border-radius:7px;",
       "font:600 12px/1 Inter,sans-serif;color:#1a1a1a;cursor:pointer;flex-shrink:0;",
       "transition:background 0.12s,border-color 0.12s;}",
-      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#d5d5d5;}",
-      "#brot-settings-backdrop .brot-contact .brot-arr{color:#8a8a8a;font-weight:400;}",
+      "#brot-settings-backdrop .brot-contact:hover{background:#f7f7f7;border-color:#e2e2e2;}",
+      "#brot-settings-backdrop .brot-contact .brot-arr{color:#888;font-weight:400;}",
       "#brot-settings-backdrop .brot-contact:hover .brot-arr{color:#333;}",
       "#brot-settings-backdrop .brot-done{display:block;width:100%;margin-top:18px;",
       "padding:11px;border:none;border-radius:8px;background:#111;color:#fff;",
@@ -349,8 +394,8 @@
       "#brot-settings-backdrop .brot-foot{margin-top:18px;padding-top:12px;",
       "border-top:1px solid #efefef;font-size:11px;color:#b8b8b8;",
       "display:flex;justify-content:space-between;align-items:center;}",
-      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f2f2f2;",
-      "border:1px solid #e4e4e4;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
+      "#brot-settings-backdrop .brot-foot kbd{font-family:inherit;background:#f7f7f7;",
+      "border:1px solid #e2e2e2;border-radius:4px;padding:1px 5px;font-size:10px;color:#888;}",
       ".brot-switch{position:relative;display:inline-block;width:34px;height:20px;",
       "flex-shrink:0;cursor:pointer;}",
       ".brot-switch input{opacity:0;width:0;height:0;position:absolute;}",
@@ -459,7 +504,7 @@
       "position:fixed",
       "inset:0",
       "z-index:100001",
-      "background:rgba(0,0,0,0.5)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "align-items:center",
       "justify-content:center",
@@ -514,7 +559,7 @@
       lbl.style.cssText = "font-weight:550;font-size:13.5px;";
       const dsc = document.createElement("div");
       dsc.textContent = desc;
-      dsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+      dsc.style.cssText = "font-size:11.5px;color:" + COLORS.statusAbsent + ";font-weight:400;";
       txt.appendChild(lbl);
       txt.appendChild(dsc);
       const sw = document.createElement("span");
@@ -560,7 +605,7 @@
 
     const seg = document.createElement("div");
     seg.style.cssText =
-      "display:flex;margin-top:9px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;";
+      "display:flex;margin-top:9px;border:1px solid " + COLORS.borderLight + ";border-radius:8px;overflow:hidden;";
     const segOpts = [
       ["delusion", "Delusion"],
       ["normal", "Normal"],
@@ -580,7 +625,7 @@
           "cursor:pointer",
           "font:600 11.5px/1.2 Inter,sans-serif",
           "transition:background 0.12s",
-          active ? "background:#111;color:#fff" : "background:#fff;color:#444",
+          active ? "background:" + COLORS.actionPrimary + ";color:" + COLORS.surface : "background:" + COLORS.surface + ";color:" + COLORS.textSecondary,
         ].join(";");
         b.addEventListener("click", () => {
           const cur = loadSettings();
@@ -589,7 +634,7 @@
           bus.emit("settings:changed", "examStats");
           renderSeg();
         });
-        if (i > 0) b.style.borderLeft = "1px solid #e2e2e2";
+        if (i > 0) b.style.borderLeft = "1px solid " + COLORS.borderLight;
         seg.appendChild(b);
       });
     }
@@ -745,9 +790,27 @@
   // FEATURE — batch controls (Expand/Collapse All + counter)
   // ════════════════════════════════════════════════════════════
 
-  // M5 fix: fallback anchor strategies
   function findAnchor() {
-    // Strategy 1: Report An Issue button (primary)
+    // Strategy 1: "Total Topics: N" overview row — insert panel inside
+    // the flex row (right-aligned, before any action buttons).
+    const totalTopicsP = Array.from(document.querySelectorAll("p")).find(
+      (p) => /Total Topics:\s*\d+/i.test(p.textContent.trim()),
+    );
+    if (totalTopicsP) {
+      let el = totalTopicsP;
+      while (el && el.parentElement) {
+        el = el.parentElement;
+        if (el.classList && el.classList.contains("custom-scrollbar")) {
+          const overviewRow = el.firstElementChild;
+          if (overviewRow) {
+            const secondChild = overviewRow.children[1] || null;
+            return { outer: overviewRow, inner: secondChild, useMargin: true };
+          }
+        }
+      }
+    }
+
+    // Strategy 2: Report An Issue button (fallback)
     const btn = document.querySelector('[aria-label="Report An Issue"]');
     if (btn) {
       const inner = btn.parentElement;
@@ -755,7 +818,7 @@
       return { outer, inner };
     }
 
-    // Strategy 2: any toolbar-like container with inline-flex or flex
+    // Strategy 3: toolbar fallback
     const toolbars = document.querySelectorAll(
       '[class*="MuiToolbar"], [class*="toolbar"], [role="toolbar"]',
     );
@@ -763,7 +826,7 @@
       return { outer: bar, inner: bar.firstChild };
     }
 
-    // Strategy 3: top-right action area (last flex child of main header)
+    // Strategy 4: header fallback
     const header = document.querySelector(
       'header, [class*="Header"], [class*="header"], nav',
     );
@@ -805,43 +868,61 @@
       panel.style.cssText = [
         "display:inline-flex",
         "gap:6px",
-        "margin-right:4px",
+        anchor.useMargin ? "margin-left:auto" : "margin-right:4px",
+        anchor.useMargin ? "margin-right:10px" : "",
         "align-items:center",
         "user-select:none",
       ].join(";");
+
+      const segment = document.createElement("span");
+
+      const bgRgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+      const isDark = bgRgb && parseInt(bgRgb[0]) < 80;
+      const bdr = isDark ? COLORS.dmBorder : "rgba(0,0,0,.12)";
+      const segBg = isDark ? COLORS.dmSegmentBg : "transparent";
+      const hovBg = isDark ? COLORS.dmHover : "rgba(0,0,0,.06)";
+
+      segment.style.cssText = "display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid " + bdr + ";background:" + segBg + ";";
 
       const btnStyle = [
         "font-size:11px",
         "font-weight:600",
         "line-height:1",
-        "padding:4px 8px",
-        "border:1px solid #d0d0d0",
-        "border-radius:6px",
+        "padding:5px 10px",
+        "border:none",
+        "outline:none",
         "cursor:pointer",
-        "display:inline-flex",
-        "align-items:center",
-        "gap:2px",
-        "color:#555",
-        "background:#fff",
+        "font-family:inherit",
+        "background:transparent",
+        "color:inherit",
+        "transition:background .12s",
       ].join(";");
 
       const expandBtn = document.createElement("button");
-      expandBtn.textContent = "\u25B8 Expand";
-      expandBtn.style.cssText = btnStyle;
+      expandBtn.textContent = "\u25BE Expand";
+      expandBtn.style.cssText = btnStyle + "border-right:1px solid " + bdr + ";";
+      expandBtn.onmouseenter = () => { expandBtn.style.background = hovBg; };
+      expandBtn.onmouseleave = () => { expandBtn.style.background = "transparent"; };
       expandBtn.onclick = () => toggleAll(true);
 
       const collapseBtn = document.createElement("button");
-      collapseBtn.textContent = "\u25BE Collapse";
+      collapseBtn.textContent = "\u25B4 Collapse";
       collapseBtn.style.cssText = btnStyle;
+      collapseBtn.onmouseenter = () => { collapseBtn.style.background = hovBg; };
+      collapseBtn.onmouseleave = () => { collapseBtn.style.background = "transparent"; };
       collapseBtn.onclick = () => toggleAll(false);
+
+      segment.appendChild(expandBtn);
+      segment.appendChild(collapseBtn);
+      panel.appendChild(segment);
 
       const counter = document.createElement("span");
       counter.id = "brot-topic-counter";
       counter.textContent = expanded + "/" + containers.length;
-      counter.style.cssText = "font-size:11px;color:#888;margin-left:2px;";
-
-      panel.appendChild(expandBtn);
-      panel.appendChild(collapseBtn);
+      const cBase = "font-size:10px;font-weight:700;padding:3px 7px;border-radius:10px;line-height:1;display:inline-flex;align-items:center;";
+      counter.style.cssText = isDark ?
+        cBase + "color:" + COLORS.dmAccentText + ";background:" + COLORS.dmAccentBg + ";" :
+        cBase + "color:" + COLORS.accentText + ";background:" + COLORS.accentBg + ";";
       panel.appendChild(counter);
 
       anchor.outer.insertBefore(panel, anchor.inner);
@@ -1215,11 +1296,11 @@
       "gap:11px",
       "max-width:480px",
       "padding:11px 13px",
-      "border:1px solid #e6e6e6",
+      "border:1px solid " + COLORS.borderLight,
       "border-radius:10px",
-      "background:#fff",
-      "box-shadow:0 6px 20px rgba(0,0,0,0.08)",
-      "color:#1a1a1a",
+      "background:" + COLORS.surface,
+      "box-shadow:0 6px 20px " + COLORS.shadowCard,
+      "color:" + COLORS.textPrimary,
       "font:500 12.5px/1.45 Inter,sans-serif",
       "cursor:pointer",
       "user-select:none",
@@ -1235,7 +1316,7 @@
       "align-items:center",
       "justify-content:center",
       "border-radius:8px",
-      "background:#fdf0ef",
+      "background:" + COLORS.warningIconBg,
       "font-size:14px",
     ].join(";");
     el.appendChild(icon);
@@ -1273,7 +1354,7 @@
     close.textContent = "\u2715";
     close.style.cssText = [
       "margin-left:2px",
-      "color:#b8b8b8",
+      "color:" + COLORS.textFaint,
       "font-size:13px",
       "font-weight:700",
       "cursor:pointer",
@@ -1342,9 +1423,9 @@
 
   // Site's own pass/fail palette (sampled from the stats slider)
   const STATUS_COLORS = {
-    Passed: "#109d58",
-    Failed: "#db4437",
-    Absent: "#9a9a9a",
+    Passed: COLORS.statusPass,
+    Failed: COLORS.statusFail,
+    Absent: COLORS.statusAbsent,
   };
 
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
@@ -1424,7 +1505,7 @@
     const pct = Math.round((passed / rows.length) * 100);
 
     // Quick health read: green outline at 50%+, red below
-    shell.style.outline = "2px solid " + (pct >= 50 ? "#109d58" : "#db4437");
+    shell.style.outline = "2px solid " + (pct >= 50 ? COLORS.statusPass : COLORS.statusFail);
     shell.style.outlineOffset = "2px";
 
     // Clear label line above the tiles (flex row → wrap it to full width)
@@ -1732,7 +1813,7 @@
       "position:fixed",
       "inset:0",
       "z-index:100002",
-      "background:rgba(0,0,0,0.45)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "align-items:center",
       "justify-content:center",
@@ -1740,15 +1821,15 @@
 
     var card = document.createElement("div");
     card.style.cssText = [
-      "background:#fff",
-      "border:1px solid #e6e6e6",
+      "background:" + COLORS.surface,
+      "border:1px solid " + COLORS.borderLight,
       "border-radius:14px",
-      "box-shadow:0 12px 40px rgba(0,0,0,0.15)",
+      "box-shadow:0 12px 40px " + COLORS.shadowLifted,
       "width:370px",
       "max-width:90vw",
       "padding:0",
       "font:13.5px/1.5 Inter,sans-serif",
-      "color:#1a1a1a",
+      "color:" + COLORS.textPrimary,
       "overflow:hidden",
     ].join(";");
 
@@ -1757,7 +1838,7 @@
     hdr.style.cssText = [
       "background:linear-gradient(135deg,#f8f9fa 0%,#eef0f2 100%)",
       "padding:22px 24px 18px",
-      "border-bottom:1px solid #eee",
+      "border-bottom:1px solid " + COLORS.borderSeparator,
       "text-align:center",
     ].join(";");
     card.appendChild(hdr);
@@ -1768,8 +1849,8 @@
       "width:36px",
       "height:36px",
       "border-radius:50%",
-      "background:#111",
-      "color:#fff",
+      "background:" + COLORS.actionPrimary,
+      "color:" + COLORS.surface,
       "font-size:18px",
       "line-height:36px",
       "text-align:center",
@@ -1784,7 +1865,7 @@
 
     var detail = document.createElement("div");
     detail.textContent = "v" + LOCAL_VERSION + " \u2192 v" + remoteVer;
-    detail.style.cssText = "font-size:12.5px;color:#888;";
+    detail.style.cssText = "font-size:12.5px;color:" + COLORS.textMuted + ";";
     hdr.appendChild(detail);
 
     // Body
@@ -1803,16 +1884,16 @@
       "padding:11px",
       "border:none",
       "border-radius:8px",
-      "background:#111",
-      "color:#fff",
+      "background:" + COLORS.actionPrimary,
+      "color:" + COLORS.surface,
       "font:650 13px/1.2 Inter,sans-serif",
       "cursor:pointer",
       "text-decoration:none",
       "text-align:center",
       "transition:background 0.15s",
     ].join(";");
-    dlBtn.addEventListener("mouseenter", function () { dlBtn.style.background = "#333"; });
-    dlBtn.addEventListener("mouseleave", function () { dlBtn.style.background = "#111"; });
+    dlBtn.addEventListener("mouseenter", function () { dlBtn.style.background = COLORS.actionPrimaryHover; });
+    dlBtn.addEventListener("mouseleave", function () { dlBtn.style.background = COLORS.actionPrimary; });
     body.appendChild(dlBtn);
 
     var skip = document.createElement("button");

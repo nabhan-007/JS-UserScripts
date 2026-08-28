@@ -133,7 +133,7 @@
       "position:fixed",
       "inset:0",
       "z-index:100002",
-      "background:rgba(0,0,0,0.45)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "align-items:center",
       "justify-content:center",
@@ -141,15 +141,15 @@
 
     var card = document.createElement("div");
     card.style.cssText = [
-      "background:#fff",
-      "border:1px solid #e6e6e6",
+      "background:" + COLORS.surface,
+      "border:1px solid " + COLORS.borderLight,
       "border-radius:14px",
-      "box-shadow:0 12px 40px rgba(0,0,0,0.15)",
+      "box-shadow:0 12px 40px " + COLORS.shadowLifted,
       "width:370px",
       "max-width:90vw",
       "padding:0",
       "font:13.5px/1.5 Inter,sans-serif",
-      "color:#1a1a1a",
+      "color:" + COLORS.textPrimary,
       "overflow:hidden",
     ].join(";");
 
@@ -158,7 +158,7 @@
     hdr.style.cssText = [
       "background:linear-gradient(135deg,#f8f9fa 0%,#eef0f2 100%)",
       "padding:22px 24px 18px",
-      "border-bottom:1px solid #eee",
+      "border-bottom:1px solid " + COLORS.borderSeparator,
       "text-align:center",
     ].join(";");
     card.appendChild(hdr);
@@ -169,8 +169,8 @@
       "width:36px",
       "height:36px",
       "border-radius:50%",
-      "background:#111",
-      "color:#fff",
+      "background:" + COLORS.actionPrimary,
+      "color:" + COLORS.surface,
       "font-size:18px",
       "line-height:36px",
       "text-align:center",
@@ -185,7 +185,7 @@
 
     var detail = document.createElement("div");
     detail.textContent = "v" + LOCAL_VERSION + " \u2192 v" + remoteVer;
-    detail.style.cssText = "font-size:12.5px;color:#888;";
+    detail.style.cssText = "font-size:12.5px;color:" + COLORS.textMuted + ";";
     hdr.appendChild(detail);
 
     // Body
@@ -204,16 +204,16 @@
       "padding:11px",
       "border:none",
       "border-radius:8px",
-      "background:#111",
-      "color:#fff",
+      "background:" + COLORS.actionPrimary,
+      "color:" + COLORS.surface,
       "font:650 13px/1.2 Inter,sans-serif",
       "cursor:pointer",
       "text-decoration:none",
       "text-align:center",
       "transition:background 0.15s",
     ].join(";");
-    dlBtn.addEventListener("mouseenter", function () { dlBtn.style.background = "#333"; });
-    dlBtn.addEventListener("mouseleave", function () { dlBtn.style.background = "#111"; });
+    dlBtn.addEventListener("mouseenter", function () { dlBtn.style.background = COLORS.actionPrimaryHover; });
+    dlBtn.addEventListener("mouseleave", function () { dlBtn.style.background = COLORS.actionPrimary; });
     body.appendChild(dlBtn);
 
     var skip = document.createElement("button");

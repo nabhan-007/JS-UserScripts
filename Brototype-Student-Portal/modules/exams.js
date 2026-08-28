@@ -14,9 +14,9 @@
 
   // Site's own pass/fail palette (sampled from the stats slider)
   const STATUS_COLORS = {
-    Passed: "#109d58",
-    Failed: "#db4437",
-    Absent: "#9a9a9a",
+    Passed: COLORS.statusPass,
+    Failed: COLORS.statusFail,
+    Absent: COLORS.statusAbsent,
   };
 
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
@@ -96,7 +96,7 @@
     const pct = Math.round((passed / rows.length) * 100);
 
     // Quick health read: green outline at 50%+, red below
-    shell.style.outline = "2px solid " + (pct >= 50 ? "#109d58" : "#db4437");
+    shell.style.outline = "2px solid " + (pct >= 50 ? COLORS.statusPass : COLORS.statusFail);
     shell.style.outlineOffset = "2px";
 
     // Clear label line above the tiles (flex row → wrap it to full width)

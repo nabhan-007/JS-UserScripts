@@ -50,9 +50,27 @@
   // FEATURE — batch controls (Expand/Collapse All + counter)
   // ════════════════════════════════════════════════════════════
 
-  // M5 fix: fallback anchor strategies
   function findAnchor() {
-    // Strategy 1: Report An Issue button (primary)
+    // Strategy 1: "Total Topics: N" overview row — insert panel inside
+    // the flex row (right-aligned, before any action buttons).
+    const totalTopicsP = Array.from(document.querySelectorAll("p")).find(
+      (p) => /Total Topics:\s*\d+/i.test(p.textContent.trim()),
+    );
+    if (totalTopicsP) {
+      let el = totalTopicsP;
+      while (el && el.parentElement) {
+        el = el.parentElement;
+        if (el.classList && el.classList.contains("custom-scrollbar")) {
+          const overviewRow = el.firstElementChild;
+          if (overviewRow) {
+            const secondChild = overviewRow.children[1] || null;
+            return { outer: overviewRow, inner: secondChild, useMargin: true };
+          }
+        }
+      }
+    }
+
+    // Strategy 2: Report An Issue button (fallback)
     const btn = document.querySelector('[aria-label="Report An Issue"]');
     if (btn) {
       const inner = btn.parentElement;
@@ -60,7 +78,7 @@
       return { outer, inner };
     }
 
-    // Strategy 2: any toolbar-like container with inline-flex or flex
+    // Strategy 3: toolbar fallback
     const toolbars = document.querySelectorAll(
       '[class*="MuiToolbar"], [class*="toolbar"], [role="toolbar"]',
     );
@@ -68,7 +86,7 @@
       return { outer: bar, inner: bar.firstChild };
     }
 
-    // Strategy 3: top-right action area (last flex child of main header)
+    // Strategy 4: header fallback
     const header = document.querySelector(
       'header, [class*="Header"], [class*="header"], nav',
     );
@@ -110,43 +128,61 @@
       panel.style.cssText = [
         "display:inline-flex",
         "gap:6px",
-        "margin-right:4px",
+        anchor.useMargin ? "margin-left:auto" : "margin-right:4px",
+        anchor.useMargin ? "margin-right:10px" : "",
         "align-items:center",
         "user-select:none",
       ].join(";");
+
+      const segment = document.createElement("span");
+
+      const bgRgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+      const isDark = bgRgb && parseInt(bgRgb[0]) < 80;
+      const bdr = isDark ? COLORS.dmBorder : "rgba(0,0,0,.12)";
+      const segBg = isDark ? COLORS.dmSegmentBg : "transparent";
+      const hovBg = isDark ? COLORS.dmHover : "rgba(0,0,0,.06)";
+
+      segment.style.cssText = "display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid " + bdr + ";background:" + segBg + ";";
 
       const btnStyle = [
         "font-size:11px",
         "font-weight:600",
         "line-height:1",
-        "padding:4px 8px",
-        "border:1px solid #d0d0d0",
-        "border-radius:6px",
+        "padding:5px 10px",
+        "border:none",
+        "outline:none",
         "cursor:pointer",
-        "display:inline-flex",
-        "align-items:center",
-        "gap:2px",
-        "color:#555",
-        "background:#fff",
+        "font-family:inherit",
+        "background:transparent",
+        "color:inherit",
+        "transition:background .12s",
       ].join(";");
 
       const expandBtn = document.createElement("button");
-      expandBtn.textContent = "\u25B8 Expand";
-      expandBtn.style.cssText = btnStyle;
+      expandBtn.textContent = "\u25BE Expand";
+      expandBtn.style.cssText = btnStyle + "border-right:1px solid " + bdr + ";";
+      expandBtn.onmouseenter = () => { expandBtn.style.background = hovBg; };
+      expandBtn.onmouseleave = () => { expandBtn.style.background = "transparent"; };
       expandBtn.onclick = () => toggleAll(true);
 
       const collapseBtn = document.createElement("button");
-      collapseBtn.textContent = "\u25BE Collapse";
+      collapseBtn.textContent = "\u25B4 Collapse";
       collapseBtn.style.cssText = btnStyle;
+      collapseBtn.onmouseenter = () => { collapseBtn.style.background = hovBg; };
+      collapseBtn.onmouseleave = () => { collapseBtn.style.background = "transparent"; };
       collapseBtn.onclick = () => toggleAll(false);
+
+      segment.appendChild(expandBtn);
+      segment.appendChild(collapseBtn);
+      panel.appendChild(segment);
 
       const counter = document.createElement("span");
       counter.id = "brot-topic-counter";
       counter.textContent = expanded + "/" + containers.length;
-      counter.style.cssText = "font-size:11px;color:#888;margin-left:2px;";
-
-      panel.appendChild(expandBtn);
-      panel.appendChild(collapseBtn);
+      const cBase = "font-size:10px;font-weight:700;padding:3px 7px;border-radius:10px;line-height:1;display:inline-flex;align-items:center;";
+      counter.style.cssText = isDark ?
+        cBase + "color:" + COLORS.dmAccentText + ";background:" + COLORS.dmAccentBg + ";" :
+        cBase + "color:" + COLORS.accentText + ";background:" + COLORS.accentBg + ";";
       panel.appendChild(counter);
 
       anchor.outer.insertBefore(panel, anchor.inner);
@@ -520,11 +556,11 @@
       "gap:11px",
       "max-width:480px",
       "padding:11px 13px",
-      "border:1px solid #e6e6e6",
+      "border:1px solid " + COLORS.borderLight,
       "border-radius:10px",
-      "background:#fff",
-      "box-shadow:0 6px 20px rgba(0,0,0,0.08)",
-      "color:#1a1a1a",
+      "background:" + COLORS.surface,
+      "box-shadow:0 6px 20px " + COLORS.shadowCard,
+      "color:" + COLORS.textPrimary,
       "font:500 12.5px/1.45 Inter,sans-serif",
       "cursor:pointer",
       "user-select:none",
@@ -540,7 +576,7 @@
       "align-items:center",
       "justify-content:center",
       "border-radius:8px",
-      "background:#fdf0ef",
+      "background:" + COLORS.warningIconBg,
       "font-size:14px",
     ].join(";");
     el.appendChild(icon);
@@ -578,7 +614,7 @@
     close.textContent = "\u2715";
     close.style.cssText = [
       "margin-left:2px",
-      "color:#b8b8b8",
+      "color:" + COLORS.textFaint,
       "font-size:13px",
       "font-weight:700",
       "cursor:pointer",

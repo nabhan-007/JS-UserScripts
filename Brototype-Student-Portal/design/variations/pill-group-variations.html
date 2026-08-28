@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pill Group — Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f6f6f6; min-height: 100vh; padding: 40px 24px; }
+  h1 { font-size: 21px; color: #141414; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #999; font-size: 13.5px; margin-bottom: 34px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; max-width: 880px; margin: 0 auto; }
+  .pick { border: 1px solid #e4e4e4; background: #fff; cursor: pointer; border-radius: 12px; padding: 20px 18px; text-align: left; display: flex; flex-direction: column; gap: 11px; transition: transform .15s, box-shadow .15s; font-family: inherit; }
+  .pick:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.1); }
+  .pick .swatch { height: 50px; border-radius: 8px; border: 1px solid #ececec; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .pick .name { font-weight: 700; font-size: 14px; color: #141414; }
+  .pick .desc { font-size: 12px; color: #888; line-height: 1.45; }
+
+  .demo-area {
+    max-width: 880px; margin: 40px auto 0; background: #fff; border: 1px solid #e4e4e4;
+    border-radius: 12px; padding: 28px 24px; box-shadow: 0 4px 16px rgba(0,0,0,.06);
+  }
+  .demo-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: #b8b8b8; margin-bottom: 12px; }
+  .demo-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .demo-row:last-child { border-bottom: none; }
+  .demo-overview { font-size: 13px; font-weight: 550; color: #1a1a1a; }
+  .demo-overview span { color: #999; font-weight: 400; }
+
+  /* ================= B-1 · Base (current B) ================= */
+  .v-1 .cg { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e2; }
+  .v-1 .cb {
+    font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px;
+    border: none; cursor: pointer; font-family: inherit;
+    background: #fff; color: #444; transition: background .12s;
+  }
+  .v-1 .cb:first-child { border-right: 1px solid #e2e2e2; }
+  .v-1 .cb:hover { background: #f5f5f5; }
+  .v-1 .cc {
+    font-size: 10px; font-weight: 600; color: #fff; background: #111;
+    padding: 3px 7px; margin-left: 6px; border-radius: 10px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  /* ================= B-2 · Active Highlight ================= */
+  .v-2 .cg { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e2; }
+  .v-2 .cb {
+    font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px;
+    border: none; cursor: pointer; font-family: inherit;
+    background: #fff; color: #888; transition: all .12s;
+  }
+  .v-2 .cb:first-child { border-right: 1px solid #e2e2e2; }
+  .v-2 .cb.act { background: #111; color: #fff; }
+  .v-2 .cb:hover:not(.act) { background: #f5f5f5; color: #444; }
+  .v-2 .cc {
+    font-size: 10px; font-weight: 600; color: #888;
+    padding: 3px 7px; margin-left: 6px; line-height: 1;
+    display: inline-flex; align-items: center; font-variant-numeric: tabular-nums;
+  }
+
+  /* ================= B-3 · Dark Inverse ================= */
+  .v-3 .cg { display: inline-flex; border-radius: 8px; overflow: hidden; background: #1a1a1a; }
+  .v-3 .cb {
+    font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px;
+    border: none; cursor: pointer; font-family: inherit;
+    background: transparent; color: #999; transition: all .12s;
+  }
+  .v-3 .cb:first-child { border-right: 1px solid #333; }
+  .v-3 .cb:hover { background: #2a2a2a; color: #eee; }
+  .v-3 .cb:active { background: #333; }
+  .v-3 .cc {
+    font-size: 10px; font-weight: 600; color: #666;
+    padding: 3px 7px; margin-left: 6px; line-height: 1;
+    display: inline-flex; align-items: center; font-variant-numeric: tabular-nums;
+  }
+
+  /* ================= B-4 · Accent Badge ================= */
+  .v-4 .cg { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e2; }
+  .v-4 .cb {
+    font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px;
+    border: none; cursor: pointer; font-family: inherit;
+    background: #fff; color: #444; transition: background .12s;
+  }
+  .v-4 .cb:first-child { border-right: 1px solid #e2e2e2; }
+  .v-4 .cb:hover { background: #f5f5f5; }
+  .v-4 .cc {
+    font-size: 10px; font-weight: 700; color: #1a6ddb; background: #eaf1fc;
+    padding: 3px 7px; margin-left: 6px; border-radius: 10px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  /* ================= B-5 · Tight Inline ================= */
+  .v-5 .cg { display: inline-flex; border-radius: 6px; border: 1px solid #e2e2e2; align-items: center; }
+  .v-5 .cb {
+    font-size: 11px; font-weight: 600; line-height: 1; padding: 4px 8px;
+    border: none; cursor: pointer; font-family: inherit;
+    background: transparent; color: #555; transition: all .12s;
+  }
+  .v-5 .cb:hover { background: #f5f5f5; }
+  .v-5 .cb:active { background: #eee; }
+  .v-5 .cc {
+    font-size: 10px; font-weight: 600; color: #555;
+    padding: 0 6px; border-left: 1px solid #e2e2e2; line-height: 24px;
+    display: inline-flex; align-items: center; font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<h1>Pill Group — variations</h1>
+<p class="sub">Base B (connected segment) refined 5 ways. Click to preview in the live panel below.</p>
+
+<div class="grid">
+  <button class="pick" onclick="show('1')">
+    <div class="swatch" style="background:#fff;">
+      <span style="display:inline-flex;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;">
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#fff;color:#444;border-right:1px solid #e2e2e2;">▾ Expand</span>
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#fff;color:#444;">▴ Collapse</span>
+      </span>
+      <span style="font-size:9px;font-weight:600;color:#fff;background:#111;padding:2px 6px;border-radius:10px;">3/5</span>
+    </div>
+    <div><div class="name">1 · Base</div><div class="desc">Current B exactly. Connected segment + dark counter pill.</div></div>
+  </button>
+  <button class="pick" onclick="show('2')">
+    <div class="swatch" style="background:#fff;">
+      <span style="display:inline-flex;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;">
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#111;color:#fff;">▾ Expand</span>
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#fff;color:#888;">▴ Collapse</span>
+      </span>
+      <span style="font-size:10px;color:#888;margin-left:5px;">3/5</span>
+    </div>
+    <div><div class="name">2 · Active Highlight</div><div class="desc">One button dark when active. Counter plain — keeps focus on the segment.</div></div>
+  </button>
+  <button class="pick" onclick="show('3')">
+    <div class="swatch" style="background:#fff;">
+      <span style="display:inline-flex;border-radius:8px;overflow:hidden;background:#1a1a1a;">
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;color:#999;">▾ Expand</span>
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;color:#999;border-left:1px solid #333;">▴ Collapse</span>
+      </span>
+      <span style="font-size:10px;color:#666;margin-left:5px;">3/5</span>
+    </div>
+    <div><div class="name">3 · Dark Inverse</div><div class="desc">Dark bg, muted text. Stands out on white pages. Hover lights up.</div></div>
+  </button>
+  <button class="pick" onclick="show('4')">
+    <div class="swatch" style="background:#fff;">
+      <span style="display:inline-flex;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;">
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#fff;color:#444;border-right:1px solid #e2e2e2;">▾ Expand</span>
+        <span style="font-size:10px;font-weight:600;padding:4px 9px;background:#fff;color:#444;">▴ Collapse</span>
+      </span>
+      <span style="font-size:9px;font-weight:700;color:#1a6ddb;background:#eaf1fc;padding:2px 6px;border-radius:10px;margin-left:4px;">3/5</span>
+    </div>
+    <div><div class="name">4 · Accent Badge</div><div class="desc">Same segment, but counter is a blue badge. Draws the eye to progress.</div></div>
+  </button>
+  <button class="pick" onclick="show('5')">
+    <div class="swatch" style="background:#fff;">
+      <span style="display:inline-flex;border:1px solid #e2e2e2;border-radius:6px;align-items:center;">
+        <span style="font-size:10px;font-weight:600;padding:3px 7px;color:#555;">▾ Expand</span>
+        <span style="font-size:10px;font-weight:600;padding:3px 7px;color:#555;">▴ Collapse</span>
+        <span style="font-size:10px;font-weight:600;color:#555;padding:0 6px;border-left:1px solid #e2e2e2;line-height:22px;">3/5</span>
+      </span>
+    </div>
+    <div><div class="name">5 · Tight Inline</div><div class="desc">Counter inside the border. One unified pill. Most compact.</div></div>
+  </button>
+</div>
+
+<div class="demo-area" id="demo">
+  <div class="demo-label">Live preview — mock overview row</div>
+  <div class="demo-row">
+    <div class="demo-overview">Task Overview <span>· Total Topics: 5</span></div>
+    <div id="ctrl-slot"></div>
+  </div>
+</div>
+
+<script>
+const T = {
+  '1': () => `
+    <span class="cg">
+      <button class="cb">▾ Expand</button>
+      <button class="cb">▴ Collapse</button>
+    </span>
+    <span class="cc">3/5</span>`,
+  '2': () => `
+    <span class="cg">
+      <button class="cb act">▾ Expand</button>
+      <button class="cb">▴ Collapse</button>
+    </span>
+    <span class="cc">3/5</span>`,
+  '3': () => `
+    <span class="cg">
+      <button class="cb">▾ Expand</button>
+      <button class="cb">▴ Collapse</button>
+    </span>
+    <span class="cc">3/5</span>`,
+  '4': () => `
+    <span class="cg">
+      <button class="cb">▾ Expand</button>
+      <button class="cb">▴ Collapse</button>
+    </span>
+    <span class="cc">3/5</span>`,
+  '5': () => `
+    <span class="cg">
+      <button class="cb">▾ Expand</button>
+      <button class="cb">▴ Collapse</button>
+      <span class="cc">3/5</span>
+    </span>`,
+};
+
+function show(v) {
+  document.getElementById('demo').className = 'demo-area v-' + v;
+  document.getElementById('ctrl-slot').innerHTML = T[v]();
+}
+show('1');
+</script>
+</body>
+</html>

@@ -90,7 +90,7 @@
       "position:fixed",
       "inset:0",
       "z-index:100001",
-      "background:rgba(0,0,0,0.5)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "align-items:center",
       "justify-content:center",
@@ -145,7 +145,7 @@
       lbl.style.cssText = "font-weight:550;font-size:13.5px;";
       const dsc = document.createElement("div");
       dsc.textContent = desc;
-      dsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+      dsc.style.cssText = "font-size:11.5px;color:" + COLORS.statusAbsent + ";font-weight:400;";
       txt.appendChild(lbl);
       txt.appendChild(dsc);
       const sw = document.createElement("span");
@@ -191,7 +191,7 @@
 
     const seg = document.createElement("div");
     seg.style.cssText =
-      "display:flex;margin-top:9px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;";
+      "display:flex;margin-top:9px;border:1px solid " + COLORS.borderLight + ";border-radius:8px;overflow:hidden;";
     const segOpts = [
       ["delusion", "Delusion"],
       ["normal", "Normal"],
@@ -211,7 +211,7 @@
           "cursor:pointer",
           "font:600 11.5px/1.2 Inter,sans-serif",
           "transition:background 0.12s",
-          active ? "background:#111;color:#fff" : "background:#fff;color:#444",
+          active ? "background:" + COLORS.actionPrimary + ";color:" + COLORS.surface : "background:" + COLORS.surface + ";color:" + COLORS.textSecondary,
         ].join(";");
         b.addEventListener("click", () => {
           const cur = loadSettings();
@@ -220,7 +220,7 @@
           bus.emit("settings:changed", "examStats");
           renderSeg();
         });
-        if (i > 0) b.style.borderLeft = "1px solid #e2e2e2";
+        if (i > 0) b.style.borderLeft = "1px solid " + COLORS.borderLight;
         seg.appendChild(b);
       });
     }
