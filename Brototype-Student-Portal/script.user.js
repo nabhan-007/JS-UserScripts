@@ -599,7 +599,7 @@
     exLbl.style.cssText = "font-weight:550;font-size:13.5px;";
     const exDsc = document.createElement("div");
     exDsc.textContent = "What the exams-page stats card shows";
-    exDsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+    exDsc.style.cssText = "font-size:11.5px;color:" + COLORS.statusAbsent + ";font-weight:400;";
     examRow.appendChild(exLbl);
     examRow.appendChild(exDsc);
 
@@ -962,7 +962,10 @@
       expand ? !isExpanded(c) : isExpanded(c),
     );
 
-    if (toToggle.length === 0) return;
+    if (toToggle.length === 0) {
+      if (expand) bus.emit("batch:expanded", { containers: [] });
+      return;
+    }
 
     // Race fix: hold the lock so no concurrent restore pass can
     // interleave clicks/writes with this batch using a stale snapshot.
@@ -970,8 +973,15 @@
 
     showOverlay(expand ? "Expanding all\u2026" : "Collapsing all\u2026");
 
+    // Stagger clicks using real elapsed time so background-tab throttling
+    // doesn't collapse the delays into one burst.
+    var batchStart = Date.now();
     toToggle.forEach((c, i) => {
-      setTimeout(() => clickHeader(c), i * 300);
+      setTimeout(() => {
+        var wait = i * 300 - (Date.now() - batchStart);
+        if (wait > 0) setTimeout(() => clickHeader(c), wait);
+        else clickHeader(c);
+      }, i * 300);
     });
 
     // Fix Perf#6: use (N-1)*300+400 instead of N*300+400
@@ -1146,15 +1156,20 @@
       return;
     }
 
+    var restoreStart = Date.now();
     pending.forEach((c, i) => {
       setTimeout(() => {
-        const t = getTitle(c);
-        if (!t || saved[t] == null) return;
-        const live = liveContainer(c);
-        if (!live) return;
-        // state may have settled since the scan; never double-toggle
-        if (isExpanded(live) === Boolean(saved[t])) return;
-        clickHeader(live);
+        var wait = i * 200 - (Date.now() - restoreStart);
+        const run = () => {
+          const t = getTitle(c);
+          if (!t || saved[t] == null) return;
+          const live = liveContainer(c);
+          if (!live) return;
+          if (isExpanded(live) === Boolean(saved[t])) return;
+          clickHeader(live);
+        };
+        if (wait > 0) setTimeout(run, wait);
+        else run();
       }, i * 200);
     });
 

@@ -185,7 +185,7 @@
     exLbl.style.cssText = "font-weight:550;font-size:13.5px;";
     const exDsc = document.createElement("div");
     exDsc.textContent = "What the exams-page stats card shows";
-    exDsc.style.cssText = "font-size:11.5px;color:#9a9a9a;font-weight:400;";
+    exDsc.style.cssText = "font-size:11.5px;color:" + COLORS.statusAbsent + ";font-weight:400;";
     examRow.appendChild(exLbl);
     examRow.appendChild(exDsc);
 
