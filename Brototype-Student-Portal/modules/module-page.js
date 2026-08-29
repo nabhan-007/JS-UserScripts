@@ -121,6 +121,7 @@
       if (!anchor) return false;
 
       const containers = getContainers();
+      if (containers.length === 0) return false;
       const expanded = containers.filter(isExpanded).length;
 
       const panel = document.createElement("div");
