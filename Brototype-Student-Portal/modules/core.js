@@ -251,23 +251,20 @@
     return fallback;
   }
 
-  // H3 fix: walk up from h6 to find the topic container dynamically.
-  // Skips the first cursor:pointer ancestor (header div) and returns
-  // the second (the actual clickable topic container with React onClick).
+  // Walk up from h6 to find the outermost cursor:pointer ancestor.
+  // This is the actual topic container (wraps both header + content).
+  // Earlier approach (skip-1-return-2nd) broke on modules where the
+  // h6 itself has cursor:pointer, shifting the count.
   function findContainerFromH6(h6) {
     let el = h6.parentElement;
-    let foundPointer = false;
+    let lastPointer = null;
     while (el && el !== document.body) {
       if (getComputedStyle(el).cursor === "pointer") {
-        if (!foundPointer) {
-          foundPointer = true;
-        } else {
-          return el;
-        }
+        lastPointer = el;
       }
       el = el.parentElement;
     }
-    return null;
+    return lastPointer;
   }
 
   // Detects expanded state across two DOM styles:
