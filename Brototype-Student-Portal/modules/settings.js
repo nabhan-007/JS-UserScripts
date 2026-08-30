@@ -125,7 +125,7 @@
           encodeURIComponent(
             "Hi Nabhan!\n\nPage: " +
               location.href +
-              "\nVersion: 1.0.0\n\nFeedback:\n",
+              "\nVersion: __SCRIPT_VERSION__\n\nFeedback:\n",
           ),
         "_blank",
         "noopener",

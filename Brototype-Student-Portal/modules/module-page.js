@@ -133,12 +133,15 @@
       }
       #brot-topic-controls button {
         min-height: 16px;
-        padding: 1px 6px !important;
+        padding: 4px 10px !important;
         border: 0 !important;
         border-radius: 0 !important;
         background: transparent !important;
         color: inherit !important;
-        font: 600 9px/1 inherit !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        font-family: inherit !important;
         cursor: pointer;
         transition: background-color .15s ease, color .15s ease;
       }
