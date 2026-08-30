@@ -297,8 +297,8 @@
 
   window.addEventListener("popstate", onUrlChange);
 
-  // L3 fix: cleanup on page unload
-  window.addEventListener("unload", () => {
+  // L3 fix: cleanup on page hide (more reliable than deprecated unload)
+  window.addEventListener("pagehide", () => {
     runTeardowns(navTeardowns);
     runTeardowns(pageTeardowns);
   });

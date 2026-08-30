@@ -137,7 +137,7 @@
       "position:fixed",
       "inset:0",
       "z-index:99999",
-      "background:rgba(0,0,0,0.5)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "flex-direction:column",
       "align-items:center",

@@ -158,7 +158,7 @@
       "position:fixed",
       "inset:0",
       "z-index:99999",
-      "background:rgba(0,0,0,0.5)",
+      "background:" + COLORS.overlayScrim,
       "display:flex",
       "flex-direction:column",
       "align-items:center",
@@ -755,12 +755,7 @@
           el.offsetHeight > 0 &&
           el.closest("button, [role='button']") === null
         ) {
-          const btn = el.closest("button, [role='button']");
-          if (btn) {
-            btn.click();
-          } else {
-            el.click();
-          }
+          el.click();
         }
       });
       // Also check buttons/role=button directly
@@ -874,13 +869,13 @@
         border-radius: 6px;
       }
       #brot-topic-controls button {
-        min-height: 18px;
-        padding: 2px 7px !important;
+        min-height: 16px;
+        padding: 1px 6px !important;
         border: 0 !important;
         border-radius: 0 !important;
         background: transparent !important;
         color: inherit !important;
-        font: 600 10px/1 inherit !important;
+        font: 600 9px/1 inherit !important;
         cursor: pointer;
         transition: background-color .15s ease, color .15s ease;
       }
@@ -889,6 +884,9 @@
       }
       #brot-topic-controls button:hover {
         background: color-mix(in srgb, currentColor 12%, transparent) !important;
+      }
+      #brot-topic-controls button:focus:not(:focus-visible) {
+        outline: none !important;
       }
       #brot-topic-controls button:focus-visible {
         outline: 2px solid ${CONTROL_ACCENT} !important;
@@ -1074,13 +1072,7 @@
       finishBatch();
     }
 
-    setTimeout(
-      () => {
-        bus.emit("batch:expanded", { containers: toToggle });
-        verifyRepair();
-      },
-      (toToggle.length - 1) * 300 + 400,
-    );
+    setTimeout(verifyRepair, (toToggle.length - 1) * 300 + 400);
   }
 
   function updateCounter() {
@@ -2033,8 +2025,8 @@
 
   window.addEventListener("popstate", onUrlChange);
 
-  // L3 fix: cleanup on page unload
-  window.addEventListener("unload", () => {
+  // L3 fix: cleanup on page hide (more reliable than deprecated unload)
+  window.addEventListener("pagehide", () => {
     runTeardowns(navTeardowns);
     runTeardowns(pageTeardowns);
   });

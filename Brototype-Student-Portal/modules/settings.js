@@ -308,7 +308,7 @@
     const foot = document.createElement("div");
     foot.className = "brot-foot";
     const fv = document.createElement("span");
-    fv.textContent = "v1.0.0 \u00b7 MNM Portal Companion";
+    fv.textContent = "v__SCRIPT_VERSION__ \u00b7 MNM Portal Companion";
     const fk = document.createElement("span");
     fk.textContent = "esc close";
     foot.appendChild(fv);
