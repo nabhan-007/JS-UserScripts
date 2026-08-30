@@ -735,7 +735,7 @@
   }
 
   // ════════════════════════════════════════════════════════════
-  // ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
   // FEATURE — read-more
   // ════════════════════════════════════════════════════════════
 
@@ -847,6 +847,70 @@
     }
   }
 
+  // ── Visual theme for the control panel ─────────────────────────
+  // Ported from the companion script: a single injected stylesheet
+  // using color-mix(currentColor) so borders/hover states adapt to
+  // light or dark pages automatically, no manual isDark detection
+  // needed. Accent color drives the counter pill + focus ring.
+  const CONTROL_THEME_ID = "brot-topic-control-theme";
+  const CONTROL_ACCENT = "#1976d2";
+
+  function injectControlTheme() {
+    if (document.getElementById(CONTROL_THEME_ID)) return;
+    const style = document.createElement("style");
+    style.id = CONTROL_THEME_ID;
+    style.textContent = `
+      #brot-topic-controls {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        color: inherit;
+        user-select: none;
+      }
+      #brot-topic-controls .brot-topic-button-group {
+        display: inline-flex;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+        border-radius: 6px;
+      }
+      #brot-topic-controls button {
+        min-height: 18px;
+        padding: 2px 7px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: inherit !important;
+        font: 600 10px/1 inherit !important;
+        cursor: pointer;
+        transition: background-color .15s ease, color .15s ease;
+      }
+      #brot-topic-controls button + button {
+        border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent) !important;
+      }
+      #brot-topic-controls button:hover {
+        background: color-mix(in srgb, currentColor 12%, transparent) !important;
+      }
+      #brot-topic-controls button:focus-visible {
+        outline: 2px solid ${CONTROL_ACCENT} !important;
+        outline-offset: -2px;
+      }
+      #brot-topic-counter {
+        display: inline-flex;
+        align-items: center;
+        min-height: 18px;
+        box-sizing: border-box;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: color-mix(in srgb, ${CONTROL_ACCENT} 16%, transparent) !important;
+        color: ${CONTROL_ACCENT} !important;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function addControls() {
     disconnectInsertObserver();
 
@@ -861,53 +925,28 @@
       if (containers.length === 0) return false;
       const expanded = containers.filter(isExpanded).length;
 
+      injectControlTheme();
+
       const panel = document.createElement("div");
       panel.id = "brot-topic-controls";
       panel.style.cssText = [
-        "display:inline-flex",
-        "gap:6px",
         anchor.useMargin ? "margin-left:auto" : "margin-right:4px",
         anchor.useMargin ? "margin-right:10px" : "",
-        "align-items:center",
-        "user-select:none",
       ].join(";");
 
       const segment = document.createElement("span");
-
-      const bgRgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
-      const isDark = bgRgb && parseInt(bgRgb[0]) < 80;
-      const bdr = isDark ? COLORS.dmBorder : "rgba(0,0,0,.12)";
-      const segBg = isDark ? COLORS.dmSegmentBg : "transparent";
-      const hovBg = isDark ? COLORS.dmHover : "rgba(0,0,0,.06)";
-
-      segment.style.cssText = "display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid " + bdr + ";background:" + segBg + ";";
-
-      const btnStyle = [
-        "font-size:11px",
-        "font-weight:600",
-        "line-height:1",
-        "padding:5px 10px",
-        "border:none",
-        "outline:none",
-        "cursor:pointer",
-        "font-family:inherit",
-        "background:transparent",
-        "color:inherit",
-        "transition:background .12s",
-      ].join(";");
+      segment.className = "brot-topic-button-group";
 
       const expandBtn = document.createElement("button");
+      expandBtn.type = "button";
       expandBtn.textContent = "\u25BE Expand";
-      expandBtn.style.cssText = btnStyle + "border-right:1px solid " + bdr + ";";
-      expandBtn.onmouseenter = () => { expandBtn.style.background = hovBg; };
-      expandBtn.onmouseleave = () => { expandBtn.style.background = "transparent"; };
+      expandBtn.setAttribute("aria-label", "Expand all topics");
       expandBtn.onclick = () => toggleAll(true);
 
       const collapseBtn = document.createElement("button");
+      collapseBtn.type = "button";
       collapseBtn.textContent = "\u25B4 Collapse";
-      collapseBtn.style.cssText = btnStyle;
-      collapseBtn.onmouseenter = () => { collapseBtn.style.background = hovBg; };
-      collapseBtn.onmouseleave = () => { collapseBtn.style.background = "transparent"; };
+      collapseBtn.setAttribute("aria-label", "Collapse all topics");
       collapseBtn.onclick = () => toggleAll(false);
 
       segment.appendChild(expandBtn);
@@ -916,11 +955,12 @@
 
       const counter = document.createElement("span");
       counter.id = "brot-topic-counter";
+      counter.setAttribute("aria-live", "polite");
       counter.textContent = expanded + "/" + containers.length;
-      const cBase = "font-size:10px;font-weight:700;padding:3px 7px;border-radius:10px;line-height:1;display:inline-flex;align-items:center;";
-      counter.style.cssText = isDark ?
-        cBase + "color:" + COLORS.dmAccentText + ";background:" + COLORS.dmAccentBg + ";" :
-        cBase + "color:" + COLORS.accentText + ";background:" + COLORS.accentBg + ";";
+      counter.setAttribute(
+        "aria-label",
+        expanded + " of " + containers.length + " topics expanded",
+      );
       panel.appendChild(counter);
 
       anchor.outer.insertBefore(panel, anchor.inner);
@@ -1049,6 +1089,10 @@
     const containers = getContainers();
     const expanded = containers.filter(isExpanded).length;
     el.textContent = expanded + "/" + containers.length;
+    el.setAttribute(
+      "aria-label",
+      expanded + " of " + containers.length + " topics expanded",
+    );
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1419,7 +1463,6 @@
   }
 
   document.addEventListener("click", onUploadAreaClick, true);
-
   // ════════════════════════════════════════════════════════════
   // FEATURE — exams page (delusion mode + last-5 exams card)
   // ════════════════════════════════════════════════════════════
