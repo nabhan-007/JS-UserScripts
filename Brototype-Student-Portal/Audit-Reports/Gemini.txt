@@ -1,0 +1,36 @@
+Alright Nabhan, let’s tear into this. Writing a vanilla JS companion for the Brototype portal to survive React's hydration and SPA routing is wildly inventive. You built a custom event bus and state store without a single dependency, which keeps it lightweight and free. But frankly, some of these architectural choices are going to choke your HP 15s when the DOM gets busy.
+
+### 💥 The Good, The Bad, & The Ugly
+
+| Aspect | The Reality |
+| --- | --- |
+| **Architecture** | A custom event bus isolates features perfectly. Clean and modular.
+
+ |
+| **"Delusion Mode"** | Faking a 100% pass rate locally by rewriting the rate labels and zeroing the fail counts is hilarious and technically well-executed.
+
+ |
+| **DOM Observers** | Watching `document.body` subtree changes in a React app is a performance ticking time bomb.
+
+ |
+
+### 🚩 Major Red Flags
+
+* **Observer Overload:** You have multiple `MutationObserver` instances (like `settingsObserver` and `examsObserver`) tracking `childList` and `subtree` on the entire `document.body`. Even with your 150ms and 250ms debouncers, the browser still fires the observer callback for every single React virtual DOM reconciliation. Your CPU is crying.
+
+
+* **Brittle Selectors:** The script heavily relies on `class*="css-"` fallbacks to find DOM elements. It also targets hardcoded text strings like `"Completed on:"` or `"Pass Rate"`. This guarantees your script will spontaneously combust the second the portal pushes a minor UI text update.
+
+
+* **Synchronous Storage:** You are hitting `localStorage` inside loop timeouts and click handlers. Because it’s a blocking API, doing this during batch ops like `toggleAll` will inevitably cause micro-stutters.
+
+
+* **State Hydration:** You attach click listeners to topics using a `dataset.brotListener` flag. If the SPA destroys and recreates those nodes without triggering your specific reset logic, the listeners vanish silently.
+
+
+
+### 🛠️ The Fix
+
+To future-proof this, scope your observers to specific wrapper IDs instead of `document.body`. Opposing argument: scoping observers is genuinely harder in SPAs because the wrappers themselves get ripped out, but utilizing event delegation on the document level is infinitely cheaper than observing every mutation. Use `IndexedDB` (via a tiny wrapper) for async state saves instead of locking up the main thread with `localStorage`.
+
+Why rely on fragile text matching for exam stats instead of intercepting the portal's network fetch requests directly to spoof the JSON response?

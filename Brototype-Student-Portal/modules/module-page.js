@@ -269,10 +269,11 @@
       return;
     }
 
-    // Race fix: hold the lock so no concurrent restore pass can
-    // interleave clicks/writes with this batch using a stale snapshot.
-    Lock.busy = true;
+    // Capture module ID at batch start — detect cross-module navigation
+    // mid-batch to prevent writing the wrong module's state.
+    const batchModuleId = getModuleId();
 
+    Lock.busy = true;
     showOverlay(expand ? "Expanding all\u2026" : "Collapsing all\u2026");
 
     // Stagger clicks using real elapsed time so background-tab throttling
@@ -286,8 +287,21 @@
       }, i * 300);
     });
 
+    function unlockAll() {
+      Lock.busy = false;
+      Lock.dirty = false;
+      hideOverlay();
+    }
+
     // Fix Perf#6: use (N-1)*300+400 instead of N*300+400
     function finishBatch() {
+      // Cross-module guard: user navigated away mid-batch
+      if (getModuleId() !== batchModuleId) {
+        console.warn(LOG, "batch aborted — module changed during operation");
+        unlockAll();
+        return;
+      }
+
       bus.emit("batch:expanded", { containers: toToggle });
 
       // Write the end-state once — the per-topic listener is muted
@@ -309,8 +323,7 @@
         }
       }
       updateCounter();
-      Lock.busy = false;
-      hideOverlay();
+      unlockAll();
 
       // Deferred restore (requested while this batch ran)
       if (Lock.dirty) {
@@ -325,6 +338,13 @@
     // so verify-and-repair loops until the DOM settles (bounded).
     let repairRounds = 0;
     function verifyRepair() {
+      // Cross-module guard
+      if (getModuleId() !== batchModuleId) {
+        console.warn(LOG, "verifyRepair aborted — module changed");
+        unlockAll();
+        return;
+      }
+
       const bad = getContainers().filter((c) => {
         const t = getTitle(c);
         return t && isExpanded(c) !== expand;
@@ -427,81 +447,100 @@
   function restore(attempt) {
     attempt = attempt || 0;
     if (Lock.busy) {
-      // M1 fix: mark dirty so we re-restore after current pass finishes
       Lock.dirty = true;
       return;
     }
+
+    // Capture module ID — detect cross-module navigation during restore
+    const restoreModuleId = getModuleId();
+
     Lock.busy = true;
-
     showOverlay("Restoring topics\u2026");
-    const saved = load();
-    const containers = getContainers();
 
-    const toExpand = containers.filter((c) => {
-      const t = getTitle(c);
-      return t && saved[t] && !isExpanded(c);
-    });
+    try {
+      const saved = load();
+      const containers = getContainers();
 
-    const toCollapse = containers.filter((c) => {
-      const t = getTitle(c);
-      return t && saved[t] === false && isExpanded(c);
-    });
+      const toExpand = containers.filter((c) => {
+        const t = getTitle(c);
+        return t && saved[t] && !isExpanded(c);
+      });
 
-    const pending = [...toExpand, ...toCollapse];
+      const toCollapse = containers.filter((c) => {
+        const t = getTitle(c);
+        return t && saved[t] === false && isExpanded(c);
+      });
 
-    if (pending.length === 0) {
-      Lock.busy = false;
-      updateCounter();
-      bus.emit("restore:settled");
-      return;
-    }
+      const pending = [...toExpand, ...toCollapse];
 
-    var restoreStart = Date.now();
-    pending.forEach((c, i) => {
-      setTimeout(() => {
-        var wait = i * 200 - (Date.now() - restoreStart);
-        const run = () => {
-          const t = getTitle(c);
-          if (!t || saved[t] == null) return;
-          const live = liveContainer(c);
-          if (!live) return;
-          if (isExpanded(live) === Boolean(saved[t])) return;
-          clickHeader(live);
-        };
-        if (wait > 0) setTimeout(run, wait);
-        else run();
-      }, i * 200);
-    });
-
-    setTimeout(
-      () => {
-        // React may miss clicks fired before hydration; retry mismatched topics
-        const missed = getContainers().filter((c) => {
-          const t = getTitle(c);
-          if (!t || !(t in saved)) return false;
-          return saved[t] ? !isExpanded(c) : isExpanded(c);
-        });
-        if (missed.length && attempt < 2) {
-          Lock.busy = false;
-          setTimeout(() => restore(attempt + 1), 1000);
-          return;
-        }
-
-        updateCounter();
+      if (pending.length === 0) {
         Lock.busy = false;
+        updateCounter();
+        bus.emit("restore:settled");
+        return;
+      }
 
-        bus.emit("restore:done");
+      var restoreStart = Date.now();
+      pending.forEach((c, i) => {
+        setTimeout(() => {
+          var wait = i * 200 - (Date.now() - restoreStart);
+          const run = () => {
+            // Cross-module guard
+            if (getModuleId() !== restoreModuleId) return;
+            const t = getTitle(c);
+            if (!t || saved[t] == null) return;
+            const live = liveContainer(c);
+            if (!live) return;
+            if (isExpanded(live) === Boolean(saved[t])) return;
+            clickHeader(live);
+          };
+          if (wait > 0) setTimeout(run, wait);
+          else run();
+        }, i * 200);
+      });
 
-        // M1 fix: if DOM changed during restore, re-restore
-        if (Lock.dirty) {
-          Lock.dirty = false;
-          restore();
-        } else {
-          bus.emit("restore:settled");
-        }
-      },
-      pending.length * 200 + 300,
-    );
+      setTimeout(
+        () => {
+          // Cross-module guard
+          if (getModuleId() !== restoreModuleId) {
+            Lock.busy = false;
+            hideOverlay();
+            return;
+          }
+
+          // React may miss clicks fired before hydration; retry mismatched topics
+          const missed = getContainers().filter((c) => {
+            const t = getTitle(c);
+            if (!t || !(t in saved)) return false;
+            return saved[t] ? !isExpanded(c) : isExpanded(c);
+          });
+          if (missed.length && attempt < 2) {
+            Lock.busy = false;
+            setTimeout(() => restore(attempt + 1), 1000);
+            return;
+          }
+
+          updateCounter();
+          Lock.busy = false;
+
+          bus.emit("restore:done");
+
+          // M1 fix: if DOM changed during restore, re-restore
+          if (Lock.dirty) {
+            Lock.dirty = false;
+            restore();
+          } else {
+            bus.emit("restore:settled");
+          }
+        },
+        pending.length * 200 + 300,
+      );
+    } catch (e) {
+      console.warn(LOG, "restore failed:", e);
+      Lock.busy = false;
+      Lock.dirty = false;
+      hideOverlay();
+    }
   }
 
   // ════════════════════════════════════════════════════════════

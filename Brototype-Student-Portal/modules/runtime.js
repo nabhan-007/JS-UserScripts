@@ -57,14 +57,20 @@
     start() {
       this.disconnect();
       this.observer = new MutationObserver(() => {
-        // Fix Perf#5: skip if controls still exist and topic count unchanged
-        const controlsExist = !!document.getElementById("brot-topic-controls");
-        const hasTopics = getContainers().length > 0;
-        if (controlsExist && hasTopics) return;
+        // Fix: instead of checking "controls + topics exist" (which
+        // short-circuits after React re-renders when the header survives
+        // but topic nodes are replaced), check if any current container
+        // is unbound — missing the data-brotListener marker.
+        const containers = getContainers();
+        const hasUnbound = containers.some((c) => !c.dataset.brotListener);
+        if (!hasUnbound) return;
 
         if (this.debounce) clearTimeout(this.debounce);
         this.debounce = setTimeout(() => {
-          if (document.getElementById("brot-topic-controls")) return;
+          // Re-check: controls may have been added by another path
+          const cs = getContainers();
+          const unbound = cs.some((c) => !c.dataset.brotListener);
+          if (!unbound && document.getElementById("brot-topic-controls")) return;
 
           const containers = getContainers();
           if (containers.length === 0) return;
@@ -280,6 +286,10 @@
     attach();
     restore();
 
+    // Re-register upload-tip click handler (removed by teardown on SPA nav).
+    // addEventListener with the same function reference won't add duplicates.
+    document.addEventListener("click", onUploadAreaClick, true);
+
     setTimeout(() => Watch.start(), 1000);
   }
 
@@ -301,6 +311,17 @@
   window.addEventListener("pagehide", () => {
     runTeardowns(navTeardowns);
     runTeardowns(pageTeardowns);
+  });
+
+  // bfcache fix: when browser restores from back/forward cache, the
+  // teardown arrays are empty (cleared on pagehide). Re-run init to
+  // re-register all listeners and observers.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      console.log(LOG, "bfcache restored — re-initializing");
+      init();
+      if (isExamsPage()) startExams();
+    }
   });
 
   function onUrlChange() {

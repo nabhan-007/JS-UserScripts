@@ -39,12 +39,20 @@ Run through every item before each release. Check only what you verified.
 - [ ] Expand All → Read More auto-clicked on all expanded topics
 - [ ] Expand All when already expanded → Read More still triggered (bug #5 fix)
 
+### Controls Position & Design
+- [ ] Controls appear in Task Overview (next to "Total Topics: N"), not in the banner
+- [ ] Counter shows correct count on first load (not 0/0 when topics exist)
+- [ ] Button divider line visible between Expand and Collapse
+- [ ] Buttons react to hover (subtle background tint)
+- [ ] Focus ring visible on keyboard navigation, hidden on mouse click
+
 ### Upload Tip Toast
 - [ ] Open 2+ topics, click "Add Attachments" → toast appears at top
 - [ ] Toast auto-dismisses after ~10s
 - [ ] Toast close button (×) works
 - [ ] "Collapse all" button closes site dialog first, then collapses all topics
 - [ ] Toast slides in with animation
+- [ ] Upload tip handler re-registered after SPA navigation (not lost on nav)
 
 ### Keyboard
 - [ ] Esc closes settings modal (if open)
@@ -101,6 +109,7 @@ Run through every item before each release. Check only what you verified.
 - [ ] Overlay hidden after navigation
 - [ ] Teardown runs on page leave (no stale listeners)
 - [ ] No duplicate controls after SPA re-render
+- [ ] Upload tip click handler re-registered on re-init (not duplicated)
 
 ---
 
@@ -127,3 +136,10 @@ Run through every item before each release. Check only what you verified.
 - [ ] React re-renders during batch → verify-and-repair handles duplicates
 - [ ] localStorage disabled/ quota exceeded → graceful fallback, no crash
 - [ ] First install (no localStorage data) → defaults applied, no errors
+- [ ] Cross-module navigation during Expand All → batch aborts, no state corruption (P0 fix)
+- [ ] Cross-module navigation during Restore → restore aborts cleanly (P0 fix)
+- [ ] Lock stuck (error during restore) → try/finally ensures unlock, no permanent overlay (P0 fix)
+- [ ] bfcache restore (back/forward cache) → pageshow re-runs init, script works (P2 fix)
+- [ ] Watch observer re-attaches after React re-renders — check `data-brotListener` markers (P1 fix)
+- [ ] getModuleId uses URLSearchParams — `?userid=abc&id=xyz` returns correct ID, not `abc` (P1 fix)
+- [ ] 9-topic module — state restore correct, not inverted (outermost cursor:pointer fix)

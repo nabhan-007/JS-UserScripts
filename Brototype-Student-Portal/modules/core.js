@@ -191,7 +191,16 @@
     el.appendChild(label);
     document.body.appendChild(el);
 
-    overlayTimeout = setTimeout(hideOverlay, 30000);
+    overlayTimeout = setTimeout(() => {
+      // Safety: if the batch is still running after 30s, force-unlock
+      // to prevent a permanent lock wedge.
+      if (Lock.busy) {
+        console.warn(LOG, "overlay timeout — force-unlocking batch");
+        Lock.busy = false;
+        Lock.dirty = false;
+      }
+      hideOverlay();
+    }, 30000);
   }
 
   function hideOverlay() {
@@ -212,8 +221,8 @@
   // ════════════════════════════════════════════════════════════
 
   function getModuleId() {
-    const m = location.href.match(/id=([a-f0-9-]+)/i);
-    if (m) return m[1];
+    const id = new URLSearchParams(location.search).get("id");
+    if (id && /^[a-f0-9-]+$/i.test(id)) return id;
     let h = 0;
     for (const ch of location.pathname) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return "u" + h.toString(36);

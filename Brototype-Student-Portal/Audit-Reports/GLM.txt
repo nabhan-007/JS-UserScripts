@@ -1,0 +1,103 @@
+# Audit: MNM Portal Companion v1.0.0
+
+**Scope note:** The paste truncates mid-function in the exams-page section (`while (a && a !== docu…`). This audit covers everything up to that point. The exams-page mutations (delusion mode writes), SPA/history patching, teardown registry, and `init()` are unverified — send the remainder if you want those reviewed too.
+
+**Overall:** Genuinely well-structured for a userscript — IIFE + strict mode, `textContent`-only DOM construction (no XSS surface), storage wrapped in try/catch, an event bus to decouple features, bounded retry loops, `noopener` on the external link, `aria-live` on the counter. The issues below are mostly edge-case correctness, one real state-corruption bug, and a couple of trust/privacy flags.
+
+---
+
+## High severity
+
+### 1. Cross-module state corruption if the user navigates during a batch
+`toggleAll` → `verifyRepair`/`finishBatch` operate on **whatever the DOM contains at timeout time**, with no check that the module is still the same:
+
+```js
+function verifyRepair() {
+  const bad = getContainers().filter((c) => { ... }); // current page's topics!
+```
+
+If the user SPA-navigates from module A to module B mid-batch:
+- `verifyRepair` clicks every topic on **module B** whose state differs from module A's batch intent.
+- `finishBatch` then writes `st[t] = expand` for **all of module B's topics** into module A's saved state — wait, worse: it writes into `moduleKey()` which now resolves to **module B's key**, permanently marking every topic on B as expanded/collapsed.
+
+**Fix:** capture `const moduleId = getModuleId()` at batch start; in `verifyRepair`/`finishBatch`, abort (hide overlay, unlock, skip save) if `getModuleId() !== moduleId`. Note that `restore` is partially protected (its `missed` filter requires `t in saved`), but `toggleAll` has no such guard.
+
+### 2. `Lock.busy` can wedge permanently
+There's no `try/finally` between `Lock.busy = true` and the eventual release in `finishBatch`, and the overlay's 30s failsafe only hides the UI:
+
+```js
+overlayTimeout = setTimeout(hideOverlay, 30000); // hides overlay, Lock stays busy
+```
+
+If any exception escapes `verifyRepair`/`finishBatch` (e.g., an unexpected DOM shape in `getTitle` climbing), the lock stays held forever: every subsequent save is silently dropped (`if (Lock.busy) return;`) and `toggleAll` becomes a no-op until reload. **Fix:** wrap the batch body in try/catch with unlock in a `finally`, and have the overlay timeout also clear `Lock.busy/dirty` as a last resort.
+
+### 3. `getModuleId()` regex is too loose
+```js
+const m = location.href.match(/id=([a-f0-9-]+)/i);
+```
+This matches **any** query param ending in `id` (`?userid=`, `?mid=`, `?categoryId=`…), anywhere in the URL including the hash. Two different modules can silently share one state store. **Fix:**
+```js
+const id = new URLSearchParams(location.search).get("id");
+if (id && /^[a-f0-9-]+$/i.test(id)) return id;
+```
+
+### 4. Remote image fetch (privacy / trust)
+`raw.githubusercontent.com/nabhan-007/...` is loaded on every overlay:
+- Leaks the user's IP + usage timing to GitHub on each batch op.
+- Content can change server-side after install — a userscript that pulls remote assets isn't fully auditable at install time. It's only an image (no script exec), and you do have an `onerror` fallback, but the fallback leaves a bare label with no spinner.
+- **Fix:** embed as a data URI or `@resource`, or at minimum swap in the spinner on error.
+
+---
+
+## Medium severity
+
+**5. User clicks during a batch are silently un-persisted, then overwritten.** The per-click handler returns early while `Lock.busy`, but the *site's* toggle still fires — so the DOM and saved state desync. Then `finishBatch` writes `st[t] = expand` for **all** containers, steamrolling any manual toggle the user made mid-batch. Fix: in `finishBatch`, write only the titles from `toToggle` (resolved via `liveContainer`), not every container.
+
+**6. Stagger comment doesn't match behavior.** "real elapsed time so background-tab throttling doesn't collapse the delays into one burst" — the code does the opposite of preventing collapse: when throttled timers fire late, `wait` is negative and clicks fire immediately in a burst. It correctly avoids *adding* delay on top of lateness, but the stated guarantee is wrong. A single target-time loop (`click when Date.now() >= batchStart + i*300`) would actually deliver it.
+
+**7. `clickReadMore` can trigger navigation.** The first loop clicks `el` for any `span, p, a` containing "read more". An actual `<a href="…">` link would navigate the page mid-batch. Guard: skip anchors with a non-`#` href.
+
+**8. 30s overlay cap vs. long batches.** For >~95 topics, `(N-1)*300+400` plus up to 3 repair rounds exceeds 30s — overlay disappears while the batch (and lock) continue. Either raise the cap dynamically or drop the fixed timeout.
+
+**9. "Reset this module" immediately re-persists data.** After `localStorage.removeItem`, it calls `toggleAll(false)`, whose `finishBatch` writes `st[t] = false` for every topic — the key is recreated (all-false) rather than absent. Functionally "all collapsed," but not "forgotten." Skip the `toggleAll` call or make it DOM-only.
+
+**10. `batch:expanded` fires on collapse too.** `finishBatch` emits it unconditionally; the read-more handler then re-clicks "read more" on whatever's still expanded. Currently harmless (expanded controls usually read "Read less"), but the event name lies and the coupling is fragile. Gate it on `expand`.
+
+**11. Duplicate topic titles share state.** State is keyed by `h6` text only. Two identical titles in one module (or `liveContainer` matching by title) conflate them. Consider keying on title + index.
+
+**12. `verifyRepair` gives up but `finishBatch` still saves the lie.** After 3 failed repair rounds, the end-state is written as if it succeeded — saved state diverges from DOM until the next restore pass. At minimum, log a warning; ideally write actual observed state (`st[t] = isExpanded(live)`).
+
+---
+
+## Low severity / nits
+
+- **Dead code:** `usedFallback` is written, never read (in the visible portion). `COLORS.dm*` dark-mode tokens also appear unused so far — verify against the truncated section.
+- **"Single source of truth" violated:** `ensureBrotStyles()` and `injectControlTheme()` hardcode hex values that duplicate `COLORS`. They *will* drift.
+- **Strategy 3 in `findAnchor`:** `for (const bar of toolbars) return {...}` — returns on the first iteration; the loop is decorative and there's no actual fallback across toolbars.
+- **`scrollToLast` offset math:** `c.offsetTop - scroller.offsetTop` is only correct if the scroller is the offset parent; otherwise the scroll lands wrong and the `scrollIntoView` fallback is never reached. Compute via `getBoundingClientRect()` deltas instead.
+- **Version string triplicated:** `@version` header, modal footer, and email body all hardcode `1.0.0`.
+- **A11y:** modal has no `role="dialog"`/focus trap/focus restore; overlay has no `role="alert"` or busy announcement. ESC-with-capture is good; consider the rest.
+- **`@noframes` missing:** the `@match` will run the script in any same-origin iframes → possible duplicate controls/overlays.
+- **`color-mix()`** requires Chromium 111+; older browsers silently lose borders/hover. Fine if you only target current Chrome/Edge.
+- **Perf:** `getContainers()` calls `getComputedStyle` per ancestor per h6, and it's invoked from mutation observers (pre-insert), click handlers, and counters — forced style recalc in hot paths. Bounded and probably fine in practice, but cache per animation frame if pages get heavy.
+- **`@grant none`:** the page's own scripts can read/write your `brot_*` localStorage keys. Acceptable for a personal tool; move to `GM.setValue` if tamper-resistance matters.
+- **Cloned settings row:** clean trick (native clone drops React fibers/handlers, `stopPropagation` blocks the root-delegated MUI close). One caveat: it clones any `id` attributes on the original `<li>`, risking duplicate IDs — strip them.
+- **Storage migration:** the `topic5_` prefix implies prior generations; the `\d+` reset regex cleans them, but nothing migrates — old state is silently orphaned.
+
+---
+
+## What's done well
+
+Worth calling out so it survives future edits: XSS-safe DOM construction throughout; storage try/catch everywhere; the `isTrusted`-aware debounce (synthetic vs. real click distinction is a subtle problem most scripts get wrong); the `liveContainer` re-resolution for detached React nodes; bounded repair/retry loops with attempt counters; the `Lock.dirty` deferral pattern; `aria-label`s on the buttons and `aria-live` on the counter; animation `.finished.catch()`.
+
+---
+
+## Priority fix list
+
+1. Module-ID guard in `verifyRepair`/`finishBatch` (bug #1) — data corruption.
+2. Lock release safety + overlay timeout unlocking (bug #2) — permanent wedge.
+3. `URLSearchParams` for module ID (bug #3) — wrong-key state blending.
+4. Localize/inline the loading image (bug #4) — trust/privacy.
+5. Write only `toToggle` titles in `finishBatch` (bug #5) — user-toggle steamroll.
+
+Paste the remainder (exams page, SPA watcher, teardown, init) and I'll audit that half — particularly whether delusion mode's DOM writes can feedback-loop with the observer, and whether the history patch leaks listeners across navigations.

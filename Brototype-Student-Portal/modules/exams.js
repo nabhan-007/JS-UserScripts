@@ -12,13 +12,6 @@
   const delusionTileOrig = new Map(); // h6 tile → original text (delusion)
   const delusionBarOrig = new Map(); // split-bar segment → original width
 
-  // Site's own pass/fail palette (sampled from the stats slider)
-  const STATUS_COLORS = {
-    Passed: COLORS.statusPass,
-    Failed: COLORS.statusFail,
-    Absent: COLORS.statusAbsent,
-  };
-
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
   // also holds the "Total Attended" totals block.
   function findStatsCard() {
@@ -53,24 +46,6 @@
     return rows.filter(
       (r, i) => !rows.some((o, j) => j !== i && o !== r && o.contains(r)),
     );
-  }
-
-  function parseExamRow(row) {
-    const t = (row.textContent || "").replace(/\s+/g, " ").trim();
-    const status = (t.match(/Passed|Failed|Absent/) || [""])[0];
-    const title = (
-      (t.match(/(?:Normal|Screening|Special)(.*?)Completed on:/) || [])[1] || ""
-    ).trim();
-    const mod = (t.match(/Module\s*\d+/i) || [""])[0];
-    return {
-      status: status,
-      date: (t.split("Completed on:")[1] || "")
-        .split(/Passed|Failed|Absent/)[0]
-        .replace(/\s*\d{1,2}:\d{2}\s*(AM|PM)\s*$/i, "")
-        .trim(),
-      title: title,
-      mod: mod,
-    };
   }
 
   // The replacement is a deep clone of the site's own stats card —

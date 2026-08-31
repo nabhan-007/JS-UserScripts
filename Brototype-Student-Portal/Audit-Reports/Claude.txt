@@ -1,0 +1,21 @@
+I read through the whole file. Overall this is unusually disciplined for a userscript — the event-bus separation, the busy-lock with dirty-flag re-queuing, and the bounded retry loops everywhere (`attempts < 30`, `attempt < 2`, `repairRounds < 3`, `tries > 40`) mean I couldn't find an actual infinite-loop or leak risk. Here's what stood out, good and bad:
+
+**Security / privacy — clean.** No `eval`, no `innerHTML` with untrusted data (the one `innerHTML = ""` is just a clear), everything user-visible is set via `textContent`. The only network calls are `fetch()` to your own GitHub raw file for the version check (line 1983) and an optional `<img>` for the loading art — neither executes remote code, both just display static content. `@grant none` keeps you in page-context with no elevated GM APIs, so the attack surface is minimal. Nothing phones home with student data.
+
+**"Delusion mode" (line ~1462) — worth flagging, not fixing.** It only rewrites text/DOM the student is already looking at, in their own browser — it doesn't touch any request sent to Brototype's servers, so it's not falsifying anything for anyone but the viewer. It's opt-in and clearly labeled. Just worth being deliberate that it's a "cosmetic mood feature," not a real numbers, since someone skimming the description might misread it as more than that.
+
+**Settings-row injection (line 421) — clever, correctly defensive.** Cloning the "My profile" `<li>` and calling `e.stopPropagation()` before it can bubble to React's delegated root listener means you don't accidentally trigger the site's own click behavior — since `cloneNode` doesn't copy addEventListener-attached handlers or React's fiber reference, this was the right call and you made it.
+
+**A few real issues:**
+
+1. **`color-mix()` browser support (line 868 onward).** This needs Chrome 111+/Safari 16.2+/Firefox 113+. Fine for you, but if any student's Tampermonkey runs in an older Chromium webview, the border/hover colors silently fall back to invalid → default, and the panel could look unstyled. Not urgent, just a compatibility footnote.
+
+2. **Dual version source of truth.** `@version` in the header (line 4) and `LOCAL_VERSION = "1.0.0"` (line 1835) are two separate strings you have to remember to bump together. If they drift, the update-checker compares against a stale number and either nags forever or never fires. Worth pulling one from a single constant, or having a build step stamp it.
+
+3. **Minor dead code:** `for (const bar of toolbars) { return {...} }` (line 817) — the `for...of` loop always returns on the first iteration, so it's really just `toolbars[0]`, written more confusingly than it needs to be.
+
+4. **`min-height: 16px` on `#brot-topic-controls button` (line 872)** is currently a no-op — with `padding: 4px 10px` and `font-size: 14px` the box is already ~24px+ tall, so the min-height never binds. Harmless, but worth deleting so a future reader doesn't think it's controlling anything.
+
+5. **Fragility, by design trade-off, not a bug:** `getContainers()`'s fallback strategy (line 260) matches on nested `div[class*="css-"]` chains, and `findAnchor()` has four cascading heuristics keyed to specific visible text ("Total Topics:", "Report An Issue"). This is the right way to survive a CSS-in-JS site with unstable class names, but it does mean any Brototype redesign that changes copy or restructures the DOM will need you back in here — there's no way around that without official DOM hooks, just flagging it as the script's single biggest maintenance dependency.
+
+Nothing here is a stop-ship issue — the code is careful about cleanup, bounded retries, and not touching anything outside the page's own DOM/localStorage. The version-sync and dead min-height are the only two I'd actually go fix.

@@ -212,7 +212,16 @@
     el.appendChild(label);
     document.body.appendChild(el);
 
-    overlayTimeout = setTimeout(hideOverlay, 30000);
+    overlayTimeout = setTimeout(() => {
+      // Safety: if the batch is still running after 30s, force-unlock
+      // to prevent a permanent lock wedge.
+      if (Lock.busy) {
+        console.warn(LOG, "overlay timeout — force-unlocking batch");
+        Lock.busy = false;
+        Lock.dirty = false;
+      }
+      hideOverlay();
+    }, 30000);
   }
 
   function hideOverlay() {
@@ -233,8 +242,8 @@
   // ════════════════════════════════════════════════════════════
 
   function getModuleId() {
-    const m = location.href.match(/id=([a-f0-9-]+)/i);
-    if (m) return m[1];
+    const id = new URLSearchParams(location.search).get("id");
+    if (id && /^[a-f0-9-]+$/i.test(id)) return id;
     let h = 0;
     for (const ch of location.pathname) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return "u" + h.toString(36);
@@ -1006,10 +1015,11 @@
       return;
     }
 
-    // Race fix: hold the lock so no concurrent restore pass can
-    // interleave clicks/writes with this batch using a stale snapshot.
-    Lock.busy = true;
+    // Capture module ID at batch start — detect cross-module navigation
+    // mid-batch to prevent writing the wrong module's state.
+    const batchModuleId = getModuleId();
 
+    Lock.busy = true;
     showOverlay(expand ? "Expanding all\u2026" : "Collapsing all\u2026");
 
     // Stagger clicks using real elapsed time so background-tab throttling
@@ -1023,8 +1033,21 @@
       }, i * 300);
     });
 
+    function unlockAll() {
+      Lock.busy = false;
+      Lock.dirty = false;
+      hideOverlay();
+    }
+
     // Fix Perf#6: use (N-1)*300+400 instead of N*300+400
     function finishBatch() {
+      // Cross-module guard: user navigated away mid-batch
+      if (getModuleId() !== batchModuleId) {
+        console.warn(LOG, "batch aborted — module changed during operation");
+        unlockAll();
+        return;
+      }
+
       bus.emit("batch:expanded", { containers: toToggle });
 
       // Write the end-state once — the per-topic listener is muted
@@ -1046,8 +1069,7 @@
         }
       }
       updateCounter();
-      Lock.busy = false;
-      hideOverlay();
+      unlockAll();
 
       // Deferred restore (requested while this batch ran)
       if (Lock.dirty) {
@@ -1062,6 +1084,13 @@
     // so verify-and-repair loops until the DOM settles (bounded).
     let repairRounds = 0;
     function verifyRepair() {
+      // Cross-module guard
+      if (getModuleId() !== batchModuleId) {
+        console.warn(LOG, "verifyRepair aborted — module changed");
+        unlockAll();
+        return;
+      }
+
       const bad = getContainers().filter((c) => {
         const t = getTitle(c);
         return t && isExpanded(c) !== expand;
@@ -1164,81 +1193,100 @@
   function restore(attempt) {
     attempt = attempt || 0;
     if (Lock.busy) {
-      // M1 fix: mark dirty so we re-restore after current pass finishes
       Lock.dirty = true;
       return;
     }
+
+    // Capture module ID — detect cross-module navigation during restore
+    const restoreModuleId = getModuleId();
+
     Lock.busy = true;
-
     showOverlay("Restoring topics\u2026");
-    const saved = load();
-    const containers = getContainers();
 
-    const toExpand = containers.filter((c) => {
-      const t = getTitle(c);
-      return t && saved[t] && !isExpanded(c);
-    });
+    try {
+      const saved = load();
+      const containers = getContainers();
 
-    const toCollapse = containers.filter((c) => {
-      const t = getTitle(c);
-      return t && saved[t] === false && isExpanded(c);
-    });
+      const toExpand = containers.filter((c) => {
+        const t = getTitle(c);
+        return t && saved[t] && !isExpanded(c);
+      });
 
-    const pending = [...toExpand, ...toCollapse];
+      const toCollapse = containers.filter((c) => {
+        const t = getTitle(c);
+        return t && saved[t] === false && isExpanded(c);
+      });
 
-    if (pending.length === 0) {
-      Lock.busy = false;
-      updateCounter();
-      bus.emit("restore:settled");
-      return;
-    }
+      const pending = [...toExpand, ...toCollapse];
 
-    var restoreStart = Date.now();
-    pending.forEach((c, i) => {
-      setTimeout(() => {
-        var wait = i * 200 - (Date.now() - restoreStart);
-        const run = () => {
-          const t = getTitle(c);
-          if (!t || saved[t] == null) return;
-          const live = liveContainer(c);
-          if (!live) return;
-          if (isExpanded(live) === Boolean(saved[t])) return;
-          clickHeader(live);
-        };
-        if (wait > 0) setTimeout(run, wait);
-        else run();
-      }, i * 200);
-    });
-
-    setTimeout(
-      () => {
-        // React may miss clicks fired before hydration; retry mismatched topics
-        const missed = getContainers().filter((c) => {
-          const t = getTitle(c);
-          if (!t || !(t in saved)) return false;
-          return saved[t] ? !isExpanded(c) : isExpanded(c);
-        });
-        if (missed.length && attempt < 2) {
-          Lock.busy = false;
-          setTimeout(() => restore(attempt + 1), 1000);
-          return;
-        }
-
-        updateCounter();
+      if (pending.length === 0) {
         Lock.busy = false;
+        updateCounter();
+        bus.emit("restore:settled");
+        return;
+      }
 
-        bus.emit("restore:done");
+      var restoreStart = Date.now();
+      pending.forEach((c, i) => {
+        setTimeout(() => {
+          var wait = i * 200 - (Date.now() - restoreStart);
+          const run = () => {
+            // Cross-module guard
+            if (getModuleId() !== restoreModuleId) return;
+            const t = getTitle(c);
+            if (!t || saved[t] == null) return;
+            const live = liveContainer(c);
+            if (!live) return;
+            if (isExpanded(live) === Boolean(saved[t])) return;
+            clickHeader(live);
+          };
+          if (wait > 0) setTimeout(run, wait);
+          else run();
+        }, i * 200);
+      });
 
-        // M1 fix: if DOM changed during restore, re-restore
-        if (Lock.dirty) {
-          Lock.dirty = false;
-          restore();
-        } else {
-          bus.emit("restore:settled");
-        }
-      },
-      pending.length * 200 + 300,
-    );
+      setTimeout(
+        () => {
+          // Cross-module guard
+          if (getModuleId() !== restoreModuleId) {
+            Lock.busy = false;
+            hideOverlay();
+            return;
+          }
+
+          // React may miss clicks fired before hydration; retry mismatched topics
+          const missed = getContainers().filter((c) => {
+            const t = getTitle(c);
+            if (!t || !(t in saved)) return false;
+            return saved[t] ? !isExpanded(c) : isExpanded(c);
+          });
+          if (missed.length && attempt < 2) {
+            Lock.busy = false;
+            setTimeout(() => restore(attempt + 1), 1000);
+            return;
+          }
+
+          updateCounter();
+          Lock.busy = false;
+
+          bus.emit("restore:done");
+
+          // M1 fix: if DOM changed during restore, re-restore
+          if (Lock.dirty) {
+            Lock.dirty = false;
+            restore();
+          } else {
+            bus.emit("restore:settled");
+          }
+        },
+        pending.length * 200 + 300,
+      );
+    } catch (e) {
+      console.warn(LOG, "restore failed:", e);
+      Lock.busy = false;
+      Lock.dirty = false;
+      hideOverlay();
+    }
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1472,13 +1520,6 @@
   const delusionTileOrig = new Map(); // h6 tile → original text (delusion)
   const delusionBarOrig = new Map(); // split-bar segment → original width
 
-  // Site's own pass/fail palette (sampled from the stats slider)
-  const STATUS_COLORS = {
-    Passed: COLORS.statusPass,
-    Failed: COLORS.statusFail,
-    Absent: COLORS.statusAbsent,
-  };
-
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
   // also holds the "Total Attended" totals block.
   function findStatsCard() {
@@ -1513,24 +1554,6 @@
     return rows.filter(
       (r, i) => !rows.some((o, j) => j !== i && o !== r && o.contains(r)),
     );
-  }
-
-  function parseExamRow(row) {
-    const t = (row.textContent || "").replace(/\s+/g, " ").trim();
-    const status = (t.match(/Passed|Failed|Absent/) || [""])[0];
-    const title = (
-      (t.match(/(?:Normal|Screening|Special)(.*?)Completed on:/) || [])[1] || ""
-    ).trim();
-    const mod = (t.match(/Module\s*\d+/i) || [""])[0];
-    return {
-      status: status,
-      date: (t.split("Completed on:")[1] || "")
-        .split(/Passed|Failed|Absent/)[0]
-        .replace(/\s*\d{1,2}:\d{2}\s*(AM|PM)\s*$/i, "")
-        .trim(),
-      title: title,
-      mod: mod,
-    };
   }
 
   // The replacement is a deep clone of the site's own stats card —
@@ -1788,14 +1811,20 @@
     start() {
       this.disconnect();
       this.observer = new MutationObserver(() => {
-        // Fix Perf#5: skip if controls still exist and topic count unchanged
-        const controlsExist = !!document.getElementById("brot-topic-controls");
-        const hasTopics = getContainers().length > 0;
-        if (controlsExist && hasTopics) return;
+        // Fix: instead of checking "controls + topics exist" (which
+        // short-circuits after React re-renders when the header survives
+        // but topic nodes are replaced), check if any current container
+        // is unbound — missing the data-brotListener marker.
+        const containers = getContainers();
+        const hasUnbound = containers.some((c) => !c.dataset.brotListener);
+        if (!hasUnbound) return;
 
         if (this.debounce) clearTimeout(this.debounce);
         this.debounce = setTimeout(() => {
-          if (document.getElementById("brot-topic-controls")) return;
+          // Re-check: controls may have been added by another path
+          const cs = getContainers();
+          const unbound = cs.some((c) => !c.dataset.brotListener);
+          if (!unbound && document.getElementById("brot-topic-controls")) return;
 
           const containers = getContainers();
           if (containers.length === 0) return;
@@ -2011,6 +2040,10 @@
     attach();
     restore();
 
+    // Re-register upload-tip click handler (removed by teardown on SPA nav).
+    // addEventListener with the same function reference won't add duplicates.
+    document.addEventListener("click", onUploadAreaClick, true);
+
     setTimeout(() => Watch.start(), 1000);
   }
 
@@ -2032,6 +2065,17 @@
   window.addEventListener("pagehide", () => {
     runTeardowns(navTeardowns);
     runTeardowns(pageTeardowns);
+  });
+
+  // bfcache fix: when browser restores from back/forward cache, the
+  // teardown arrays are empty (cleared on pagehide). Re-run init to
+  // re-register all listeners and observers.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      console.log(LOG, "bfcache restored — re-initializing");
+      init();
+      if (isExamsPage()) startExams();
+    }
   });
 
   function onUrlChange() {

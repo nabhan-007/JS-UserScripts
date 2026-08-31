@@ -1,0 +1,172 @@
+# Audit of MNM Portal Companion for Brototype (v1.0.0)
+
+## Overview
+
+This Tampermonkey userscript enhances the Brototype student portal by:
+- Persisting expanded/collapsed topic states per module.
+- Adding Expand All / Collapse All controls with a live counter.
+- Automatically expanding “Read more” links inside topics.
+- Auto-scrolling to the last expanded topic on revisit.
+- Displaying a contextual upload tip.
+- Providing a settings modal accessible from the profile popover.
+- Modifying exam statistics (delusion mode, last‑5‑exams card).
+- Checking for script updates.
+
+The script is well‑structured into modular sections (core, features, runtime) and uses an event bus for loose coupling. It addresses many challenges of single‑page applications (SPA), React re‑renders, and localStorage persistence.
+
+## Strengths
+
+- **Modular architecture** – Clear separation of concerns, features communicate via a central event bus.
+- **Robust DOM discovery** – Multiple strategies to locate topic containers and expand/collapse states.
+- **Handling React re‑renders** – Uses `MutationObserver` and fallback re‑initialization.
+- **Locking mechanism** – Prevents concurrent batch operations from corrupting state.
+- **Overlay & loading image** – Provides visual feedback during long operations.
+- **Teardown registry** – Cleans up observers and listeners on SPA navigation / pagehide.
+- **User settings** – Toggle for loading image and exam stats mode.
+- **Update check** – Fetches remote version and shows a modal.
+
+## Identified Issues
+
+### 1. Potential Logic Bugs
+
+#### a) Incorrect state saving after batch operations
+In `toggleAll()`, the script saves the end‑state assuming all toggles succeeded:
+```javascript
+const st = load();
+getContainers().forEach((c) => {
+    const t = getTitle(c);
+    if (t) st[t] = expand;
+});
+save(st);
+```
+But the verification loop (`verifyRepair`) attempts to fix mismatched topics up to 3 rounds. If some topics still fail to toggle (e.g., React didn’t respond), the saved state will not reflect the actual DOM. This can lead to inconsistent restoration on the next visit.
+
+**Recommendation:** After the repair loop, verify each topic’s final `isExpanded()` state and only save those that match the target. Or, save only after confirming all topics are in the intended state; otherwise, retry or abort with an error.
+
+#### b) `restore()` may finish without reconciling all mismatches
+`restore()` retries up to 2 times, but if after those attempts some topics are still mismatched, it still marks the lock as free and emits `restore:settled`. This may leave the page in a partially restored state without user notification.
+
+**Recommendation:** After the final attempt, if mismatched topics remain, log a warning and possibly display a non‑blocking notification. At minimum, ensure the lock is always released and the counter updated.
+
+#### c) Header click detection fragile
+In `attach()`, the script determines whether a click occurred on the header by walking from `e.target` up to the container and checking if it passes through `headerEl` (the immediate parent of the `h6`). This may fail if the header contains nested interactive elements or if the structure changes slightly.
+
+**Recommendation:** Consider using a more direct selector for the header element (e.g., the element that has the pointer cursor and contains the topic title) and attaching the click listener to that header instead of the whole container.
+
+### 2. Security & Privacy Concerns
+
+#### a) Remote script fetching for update check
+`checkForUpdate()` fetches the raw script from a GitHub URL. While the script does not auto‑update, the response (script content) is parsed for a version. A malicious third party could host a fake version and trick users into clicking a link that leads to a malicious script. This is a minor risk since the user must manually click “Update now”.
+
+**Recommendation:** Consider using a checksum (e.g., SHA‑256) of the remote script before showing the update prompt, or at least warn that the source is untrusted.
+
+#### b) Loading external image from `raw.githubusercontent.com`
+The overlay can load an image from the same repository. While images are generally safe, they could be used to track IP addresses or inject malicious content if the repository is compromised. The image URL is hardcoded; an attacker could replace it with a tracking pixel.
+
+**Recommendation:** If privacy is a concern, make the image optional (it is) and consider hosting it on a trusted CDN with integrity checks.
+
+#### c) localStorage data
+The script stores topic states and settings in `localStorage`. This is local to the browser and not transmitted, so no direct security issue. However, the data could be considered sensitive (which modules the user is working on). Users should be aware.
+
+### 3. Performance Issues
+
+#### a) Multiple MutationObservers
+The script uses up to four `MutationObserver` instances:
+- `settingsObserver` (watch for settings popover)
+- `addControlsObserver` (watch for anchor while inserting controls)
+- `examsObserver` (watch exams page for stats changes)
+- `Watch.observer` (watch for topic DOM re‑renders)
+
+On a busy page, these observers can consume resources. The `Watch` observer is the most concerning because it fires on every DOM change and then debounces. The script tries to reduce work by early‑returning if controls and topics already exist, but the observer still listens.
+
+**Recommendation:** Consolidate observers where possible, or use a single observer with different filters. For `Watch`, consider using `requestAnimationFrame` throttling and only activating when the module page is active.
+
+#### b) Heavy DOM cloning in `buildLast5Card`
+The function clones the entire stats card and modifies it. This can be expensive if the card is large and contains many event listeners. It also duplicates interactive elements (like sliders) which are not fully forwarded.
+
+**Recommendation:** Instead of cloning, construct a simplified card from scratch using only the necessary elements. Or, hide the original and show a lightweight overlay card.
+
+#### c) Inefficient DOM traversals in `findContainerFromH6`
+For every h6, the function walks up the tree to find the outermost pointer cursor element. If the page has many topics, this could be slow. Caching the result per h6 (or per container) could improve performance.
+
+**Recommendation:** Use a WeakMap to cache the container for a given h6, invalidated when the DOM changes.
+
+### 4. Compatibility
+
+#### a) `color-mix()` CSS function
+The control theme uses `color-mix()` to adapt to light/dark modes. This is a modern CSS feature not supported in older browsers (e.g., Safari < 16.4, Firefox < 113). On unsupported browsers, the styles will be ignored, causing the control panel to look unstyled (possibly transparent background, default button appearance).
+
+**Recommendation:** Provide fallback colors via standard CSS variables or conditional detection. Alternatively, use a JavaScript‑computed `isDark` detection to apply explicit colors.
+
+#### b) `Array.prototype.find`, `flatMap`, etc.
+The script uses modern array methods, which are fine for most modern browsers but may fail in very old ones. Tampermonkey typically runs on modern browsers, so this is low risk.
+
+### 5. Code Quality & Maintainability
+
+#### a) Mixed `var` and `let/const`
+The script uses `var` in some places (e.g., `overlayTimeout`, `overlaySpin`, `batchStart`, `restoreStart`) while using `let` and `const` elsewhere. This is inconsistent and may indicate older code mixed with newer.
+
+**Recommendation:** Standardize on `let` and `const`.
+
+#### b) Large inline style strings
+Many CSS styles are embedded as multi‑line strings. This makes the code harder to read and edit. A separate CSS file or a single `<style>` block with all rules would be cleaner.
+
+**Recommendation:** Move all static CSS into the `ensureBrotStyles()` function and use classes instead of inline styles where possible.
+
+#### c) Repetitive DOM queries
+Functions like `getContainers()` are called frequently (e.g., inside `toggleAll`, `attach`, `restore`, `updateCounter`). Each call performs a full `querySelectorAll`. Caching the result for a short period could improve performance.
+
+**Recommendation:** Implement a simple cache that invalidates on DOM mutations (via the `Watch` observer).
+
+#### d) Magic numbers
+Several magic numbers appear: `300` (stagger delay), `200` (debounce), `1000` (retry delay), `30` (max attempts), etc. These should be named constants for clarity.
+
+**Recommendation:** Define constants at the top of the script.
+
+#### e) Error handling
+Some `try/catch` blocks are used, but many operations (e.g., `localStorage.setItem`) are not fully guarded. A quota exceeded error could break the script.
+
+**Recommendation:** Wrap all `localStorage` accesses in a utility function that handles errors gracefully.
+
+### 6. SPA Navigation & Teardown
+
+#### a) `history.pushState` / `replaceState` patching
+The script patches these methods globally and never restores them. If the script is ever disabled or removed, the patches remain (though they will be gone on page reload). This could interfere with other scripts or frameworks that expect the original functions.
+
+**Recommendation:** Store the originals and provide a way to restore them (though for a userscript this is usually acceptable).
+
+#### b) `pagehide` vs `beforeunload`
+Using `pagehide` is good, but note that on some mobile browsers, `pagehide` may fire earlier than expected, potentially cleaning up observers while the page is still in use.
+
+**Recommendation:** Consider using both `pagehide` and `visibilitychange` to be safe.
+
+### 7. Specific Functional Concerns
+
+#### a) `findAnchor()` may insert controls in the wrong place
+The function tries multiple strategies to find a good insertion point. If none works, it returns `null` and the observer keeps trying. On pages where the “Report An Issue” button is absent or the layout is unusual, the controls may never appear.
+
+**Recommendation:** Provide a manual fallback (e.g., floating button) if no anchor is found after a few attempts.
+
+#### b) Upload tip may not detect the correct click
+The global click listener checks for any element with pointer cursor whose text includes “Add Attachments”. This could match unexpected elements.
+
+**Recommendation:** Restrict the search to known parent containers or use a more specific attribute (e.g., `aria-label` containing “Add Attachments”).
+
+#### c) Exam stats modifications could conflict with other scripts
+The delusion and last‑5‑exams tweaks directly manipulate the exams page DOM. If the site updates its layout, the selectors will break. Additionally, the last‑5 card is inserted before the original stats card, which may shift layout.
+
+**Recommendation:** Use feature detection and fail gracefully (which it does), and possibly wrap the inserted card in a container to minimize layout impact.
+
+## Summary of Recommendations
+
+1. **Fix state saving after batch operations** – verify actual states before writing to localStorage.
+2. **Improve header click detection** – attach listener directly to the header element.
+3. **Add fallback styles for `color-mix()`** – ensure controls remain visible in older browsers.
+4. **Consolidate and throttle MutationObservers** – especially the `Watch` observer.
+5. **Replace DOM cloning with lightweight construction** for the last‑5‑exams card.
+6. **Standardize code style** – use `let`/`const`, extract magic numbers to constants.
+7. **Centralize localStorage handling** with robust error catching.
+8. **Consider adding a manual fallback for the controls anchor** if none is found after a few seconds.
+9. **Review the update checker** – add integrity verification or warn about third‑party sources.
+
+Overall, the script is well‑thought‑out and addresses many real‑world problems of userscripts on SPAs. With the above fixes, it would be even more robust and maintainable.
