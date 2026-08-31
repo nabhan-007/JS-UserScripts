@@ -21,6 +21,9 @@ A userscript that makes the [Brototype student portal](https://student.brototype
 - **Delusion mode** — makes it look like you passed everything (100% pass rate)
 - **Last 5 exams** — shows a separate card with stats from only your 5 most recent exams
 
+### On the Requests Page
+- **Auto-selects Pending** — opens on the Pending tab instead of All, since that's what you check most
+
 ### Everywhere
 - **Update checker** — quietly checks for newer versions and shows a small popup when one is available
 - **Esc key** — closes the settings modal

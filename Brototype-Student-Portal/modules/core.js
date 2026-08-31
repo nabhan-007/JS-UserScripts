@@ -86,6 +86,10 @@
     return /^\/exams([/?]|$)/.test(location.pathname);
   }
 
+  function isRequestsPage() {
+    return /^\/requests([/?]|$)/.test(location.pathname);
+  }
+
   // ════════════════════════════════════════════════════════════
   // CORE — event bus
   // ════════════════════════════════════════════════════════════

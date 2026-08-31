@@ -107,6 +107,10 @@
     return /^\/exams([/?]|$)/.test(location.pathname);
   }
 
+  function isRequestsPage() {
+    return /^\/requests([/?]|$)/.test(location.pathname);
+  }
+
   // ════════════════════════════════════════════════════════════
   // CORE — event bus
   // ════════════════════════════════════════════════════════════
@@ -2027,6 +2031,37 @@
   }
 
   // ════════════════════════════════════════════════════════════
+  // RUNTIME — requests auto-select Pending tab
+  // ════════════════════════════════════════════════════════════
+
+  function autoSelectPendingTab() {
+    let attempts = 0;
+    (function wait() {
+      if (!isRequestsPage()) return;
+
+      // Find the "All" tab, then click its "Pending" sibling
+      const allTabs = Array.from(document.querySelectorAll("div")).filter(
+        (d) =>
+          d.textContent.trim() === "All" &&
+          getComputedStyle(d).cursor === "pointer",
+      );
+      for (const allTab of allTabs) {
+        const parent = allTab.parentElement;
+        if (!parent) continue;
+        const pendingTab = Array.from(parent.children).find(
+          (d) => d.textContent.trim() === "Pending",
+        );
+        if (pendingTab) {
+          pendingTab.click();
+          return;
+        }
+      }
+
+      if (++attempts < 20) setTimeout(wait, 300);
+    })();
+  }
+
+  // ════════════════════════════════════════════════════════════
   // RUNTIME — init, SPA navigation, unload, kickoff
   // ════════════════════════════════════════════════════════════
 
@@ -2088,6 +2123,7 @@
       const controls = document.getElementById("brot-topic-controls");
       if (controls) controls.remove();
       if (isExamsPage()) startExams();
+      if (isRequestsPage()) autoSelectPendingTab();
       return;
     }
 
@@ -2123,6 +2159,12 @@
     // Exams page — apply stats tweaks; module pages handled below
     if (isExamsPage()) {
       startExams();
+      return;
+    }
+
+    // Requests page — auto-select Pending tab
+    if (isRequestsPage()) {
+      autoSelectPendingTab();
       return;
     }
 

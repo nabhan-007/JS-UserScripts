@@ -149,3 +149,12 @@ Run through every item before each release. Check only what you verified.
 ## Documentation
 
 - [ ] README matches current features — no missing or outdated items
+
+---
+
+## Requests Page
+
+### Pending Auto-Select
+- [ ] Navigate to `/requests` → Pending tab is auto-selected (white text, other tabs gray)
+- [ ] SPA navigate away and back → Pending re-selected
+- [ ] Full page reload → Pending still auto-selected
