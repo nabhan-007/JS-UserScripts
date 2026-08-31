@@ -6,9 +6,10 @@
 - [x] On `/requests` page, auto-select the "Pending" filter tab instead of "All"
 - [x] Pending is the most common view — saves a click every visit
 
-### 2. Esc = Collapse All → Refresh
-- [ ] On every page: Esc first collapses all expanded topics, then refreshes the page
-- [ ] Acts as a quick reset for any script-related glitch
+### 2. ~~Esc = Collapse All → Refresh~~ ✅
+- [x] On every page: Esc refreshes the page
+- [x] On module pages: sets all topic states to collapsed before refreshing
+- [x] Settings modal closes via Done button or backdrop click only
 
 ### 3. Copy Pendings Button
 - [ ] Add a copy-to-clipboard button next to the "Previous Pendings" and "Current Pendings" buttons in the exam detail panel

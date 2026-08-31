@@ -55,8 +55,9 @@ Run through every item before each release. Check only what you verified.
 - [ ] Upload tip handler re-registered after SPA navigation (not lost on nav)
 
 ### Keyboard
-- [ ] Esc closes settings modal (if open)
-- [ ] Esc does NOT trigger collapse when settings modal is open
+- [ ] Esc on module page → localStorage topics set to false → page refreshes
+- [ ] Esc on non-module page → page refreshes
+- [ ] Settings modal does NOT close on Esc (Done button or backdrop only)
 
 ---
 
@@ -91,7 +92,6 @@ Run through every item before each release. Check only what you verified.
 - [ ] "Reset ALL modules" → confirm dialog → removes all `brot_topic*` keys
 - [ ] "Contact us" → opens Gmail compose
 - [ ] Done button closes modal
-- [ ] Esc key closes modal
 - [ ] Clicking backdrop closes modal
 
 ### Profile Injection

@@ -102,6 +102,25 @@
   };
 
   // ════════════════════════════════════════════════════════════
+  // RUNTIME — Esc = hard refresh
+  // ════════════════════════════════════════════════════════════
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (document.getElementById("brot-settings-backdrop")) return;
+    if (isModulePage()) {
+      try {
+        var state = load();
+        for (var k in state) state[k] = false;
+        save(state);
+      } catch (err) {
+        console.warn(LOG, "Esc reset failed:", err);
+      }
+    }
+    location.reload();
+  });
+
+  // ════════════════════════════════════════════════════════════
   // RUNTIME — update checker
   // ════════════════════════════════════════════════════════════
 

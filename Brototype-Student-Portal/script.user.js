@@ -494,14 +494,9 @@
     }
   }
 
-  function settingsEscHandler(e) {
-    if (e.key === "Escape") closeSettingsModal();
-  }
-
   function closeSettingsModal() {
     const b = document.getElementById("brot-settings-backdrop");
     if (b) b.remove();
-    document.removeEventListener("keydown", settingsEscHandler, true);
   }
 
   function openSettingsModal() {
@@ -734,7 +729,7 @@
     const fv = document.createElement("span");
     fv.textContent = "v1.0.0 \u00b7 MNM Portal Companion";
     const fk = document.createElement("span");
-    fk.textContent = "esc close";
+    fk.textContent = "Esc to refresh";
     foot.appendChild(fv);
     foot.appendChild(fk);
     card.appendChild(foot);
@@ -743,7 +738,6 @@
     backdrop.addEventListener("click", (e) => {
       if (e.target === backdrop) closeSettingsModal();
     });
-    document.addEventListener("keydown", settingsEscHandler, true);
     document.body.appendChild(backdrop);
   }
 
@@ -1858,6 +1852,25 @@
       });
     },
   };
+
+  // ════════════════════════════════════════════════════════════
+  // RUNTIME — Esc = hard refresh
+  // ════════════════════════════════════════════════════════════
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (document.getElementById("brot-settings-backdrop")) return;
+    if (isModulePage()) {
+      try {
+        var state = load();
+        for (var k in state) state[k] = false;
+        save(state);
+      } catch (err) {
+        console.warn(LOG, "Esc reset failed:", err);
+      }
+    }
+    location.reload();
+  });
 
   // ════════════════════════════════════════════════════════════
   // RUNTIME — update checker

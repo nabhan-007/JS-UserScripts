@@ -70,14 +70,9 @@
     }
   }
 
-  function settingsEscHandler(e) {
-    if (e.key === "Escape") closeSettingsModal();
-  }
-
   function closeSettingsModal() {
     const b = document.getElementById("brot-settings-backdrop");
     if (b) b.remove();
-    document.removeEventListener("keydown", settingsEscHandler, true);
   }
 
   function openSettingsModal() {
@@ -310,7 +305,7 @@
     const fv = document.createElement("span");
     fv.textContent = "v__SCRIPT_VERSION__ \u00b7 MNM Portal Companion";
     const fk = document.createElement("span");
-    fk.textContent = "esc close";
+    fk.textContent = "Esc to refresh";
     foot.appendChild(fv);
     foot.appendChild(fk);
     card.appendChild(foot);
@@ -319,7 +314,6 @@
     backdrop.addEventListener("click", (e) => {
       if (e.target === backdrop) closeSettingsModal();
     });
-    document.addEventListener("keydown", settingsEscHandler, true);
     document.body.appendChild(backdrop);
   }
 

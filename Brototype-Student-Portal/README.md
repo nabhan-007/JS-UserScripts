@@ -26,7 +26,7 @@ A userscript that makes the [Brototype student portal](https://student.brototype
 
 ### Everywhere
 - **Update checker** — quietly checks for newer versions and shows a small popup when one is available
-- **Esc key** — closes the settings modal
+- **Esc key** — hard refreshes the page (on module pages, collapses all topics first)
 
 ### Settings (click your profile → MNM Script Settings)
 - **Loading image** toggle — choose between an art image or a spinner
