@@ -133,7 +133,7 @@
       }
       #brot-topic-controls button {
         min-height: 16px;
-        padding: 4px 10px !important;
+        padding: 4px 8px !important;
         border: 0 !important;
         border-radius: 0 !important;
         background: transparent !important;

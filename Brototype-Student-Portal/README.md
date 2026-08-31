@@ -2,7 +2,7 @@
 
 A userscript that makes the [Brototype student portal](https://student.brototype.com) easier to use. It remembers which topics you've opened, adds expand/collapse all buttons, and gives you some exam stats tricks.
 
-**Install**: [GreasyFork](#) · **Version**: 1.0.0 · **License**: MIT
+**Version**: 1.0.0 · **License**: MIT
 
 ---
 
@@ -14,12 +14,16 @@ A userscript that makes the [Brototype student portal](https://student.brototype
 - **Scrolls to your last topic** — when you come back, it takes you right there
 - **Opens "Read more" links** — after Expand All, it clicks every "Read more" so you see full content
 - **Upload helper** — shows a tip when you attach files, so auto-scroll works on your next visit
-- **Loading screen** — a small overlay while things load (toggleable in settings)
+- **Loading overlay** — shows during batch operations and restore (art image or spinner, toggled in settings)
 
 ### On the Exams Page
 - **Normal mode** — shows your real stats
 - **Delusion mode** — makes it look like you passed everything (100% pass rate)
 - **Last 5 exams** — shows a separate card with stats from only your 5 most recent exams
+
+### Everywhere
+- **Update checker** — quietly checks for newer versions and shows a small popup when one is available
+- **Esc key** — closes the settings modal
 
 ### Settings (click your profile → MNM Script Settings)
 - **Loading image** toggle — choose between an art image or a spinner
@@ -72,6 +76,7 @@ The script runs alongside the Brototype website without modifying it. It:
 - **Watches for page changes** — a MutationObserver detects when React updates the page, so the script re-initializes when needed
 - **Hooks into navigation** — catches browser back/forward and in-app navigation to clean up and restart
 - **Uses an event bus** — modules talk to each other through events instead of calling each other directly
+- **Safe across navigation** — if you leave a page mid-operation, the script cleanly stops instead of breaking anything
 
 ---
 

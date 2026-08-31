@@ -2,30 +2,36 @@
 
 ## Features to Implement
 
-### 1. Copy Button for Current & Previous Pending
-- [ ] Add copy button for current and previous pending tasks
+### 1. Copy Pendings Button
+- [ ] Add a copy-to-clipboard button next to the "Previous Pendings" and "Current Pendings" buttons in the exam detail panel
+- [ ] Scrapes the pending text block (task categories, topics, remarks) and copies it to clipboard
+- [ ] Useful for sharing pending topics in study groups or saving locally
 
 ### 2. Next Exam Countdown Chip
-- [ ] Show countdown near FAQ, notifications, and Profile chip (visible on most pages)
-- [ ] Cache exam date when user visits exams page
-- [ ] If data unavailable, show a button, clicking that button will put up the spinner so, user doesn't interrupt, then will go to exams section, scrape data and come back to page from where the button was clicked.
+- [ ] Inject a countdown chip to the left of the FAQ button in the top banner (visible on most pages)
+- [ ] Shows days/hours until next upcoming exam
+- [ ] Cache exam date in localStorage when user visits exams page
+- [ ] If no cached data, show a "Scan" button — clicking it shows a spinner, navigates to exams page, scrapes upcoming exam date, then navigates back
 
 ### 3. Esc = Collapse All → Refresh
-- [ ] Esc should collapse all topics first, then refresh the page
-- [ ] Should fix most script-related bugs by resetting state
+- [ ] On every page: Esc first collapses all expanded topics, then refreshes the page
+- [ ] Acts as a quick reset for any script-related glitch
 
 ### 4. Requests Default to Pending
-- [ ] `/requests` page: Filter tab auto-selects "Pending" instead of "All"
-- [ ] Most relevant view for users
+- [ ] On `/requests` page, auto-select the "Pending" filter tab instead of "All"
+- [ ] Pending is the most common view — saves a click every visit
 
-### 5. A button to add description to all topics
-- [ ] Need to discuss on how to achieve this. I am thinking of asking for their GEMINI API key which gives a generous free tier. Or an option to add their custom ones. Need to discuss. On chrome I heard the chrome downloads a model to the browser, don't know much about it, needs research.
-- [ ] The descriptions should be over 67 words.
-- [ ] Clear prompts for the ai are to be crafted to gain consistency and acceptable format of response.
-- [ ] First we will show all the descriptions the ai created. They will have an option to retry button that sends the description to the ai and says needs improvement and the user didn't like it. Another button is remove which when clicked will remove the description for that topic. And finally when there are only descriptions the user has agreed we will upload/add them. The process is: Click `Add attachments` -> Click `Text` -> Add title and description -> submit. Will show the spinner so, the user don't mess it up.
-- [ ] We will clearly show that the description as ai generated and it might make mistakes.
-- [ ] will discuss thoroughly before implementing.
+### 5. AI Description Generator
+- [ ] Add a button to auto-generate topic descriptions using AI (e.g., Gemini API — generous free tier, or user-supplied custom key)
+- [ ] Research: Chrome may be able to run a local model in-browser — needs investigation
+- [ ] Each description must be 67+ words
+- [ ] Craft clear prompts to get consistent, well-formatted output
+- [ ] **Review flow**: Show all AI-generated descriptions first. Per topic: Retry (regenerate), Remove (discard), or Accept. Once only accepted descriptions remain, batch-upload them via Add attachments → Text → title + description → submit (with spinner to prevent interruption)
+- [ ] Always label descriptions as "AI-generated" with a disclaimer about potential errors
+- [ ] Needs thorough discussion before implementation
 
-### 6. Disclaimer
-- [ ] Discuss the need to add: user take full responsibility for running the script and the makers are not liable for anything. An agree button to show at the fresh install of the script. We will say that the script is thoroughly tested but, vibe-coded. Not exact words. Need to be more professional.
-- [ ] will discuss thoroughly before implementing.
+### 6. Disclaimer on First Install
+- [ ] Show an agreement modal on fresh script install
+- [ ] States the user assumes full responsibility for running the script; makers are not liable
+- [ ] Professional tone: script is thoroughly tested but community-built
+- [ ] Needs thorough discussion before implementation

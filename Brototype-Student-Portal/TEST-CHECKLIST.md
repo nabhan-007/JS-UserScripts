@@ -143,3 +143,9 @@ Run through every item before each release. Check only what you verified.
 - [ ] Watch observer re-attaches after React re-renders — check `data-brotListener` markers (P1 fix)
 - [ ] getModuleId uses URLSearchParams — `?userid=abc&id=xyz` returns correct ID, not `abc` (P1 fix)
 - [ ] 9-topic module — state restore correct, not inverted (outermost cursor:pointer fix)
+
+---
+
+## Documentation
+
+- [ ] README matches current features — no missing or outdated items
