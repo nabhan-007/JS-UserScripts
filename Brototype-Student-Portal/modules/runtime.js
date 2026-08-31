@@ -1,6 +1,6 @@
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — teardown registry
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- teardown registry
+  // ============================================================
 
   const navTeardowns = [];
   const pageTeardowns = [];
@@ -37,9 +37,9 @@
     list.length = 0;
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — DOM watch (survive React re-renders)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- DOM watch (survive React re-renders)
+  // ============================================================
 
   const Watch = {
     observer: null,
@@ -60,7 +60,7 @@
         // Fix: instead of checking "controls + topics exist" (which
         // short-circuits after React re-renders when the header survives
         // but topic nodes are replaced), check if any current container
-        // is unbound — missing the data-brotListener marker.
+        // is unbound -- missing the data-brotListener marker.
         const containers = getContainers();
         const hasUnbound = containers.some((c) => !c.dataset.brotListener);
         if (!hasUnbound) return;
@@ -101,9 +101,9 @@
     },
   };
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — Esc = hard refresh
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- Esc = hard refresh
+  // ============================================================
 
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
@@ -120,9 +120,9 @@
     location.reload();
   });
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — update checker
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- update checker
+  // ============================================================
 
   const UPDATE_URL =
     "https://raw.githubusercontent.com/nabhan-007/JS-UserScripts/main/Brototype-Student-Portal/script.user.js";
@@ -291,9 +291,9 @@
       .catch(function () {});
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — requests auto-select Pending tab
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- requests auto-select Pending tab
+  // ============================================================
 
   function autoSelectPendingTab() {
     let attempts = 0;
@@ -322,9 +322,9 @@
     })();
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — init, SPA navigation, unload, kickoff
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- init, SPA navigation, unload, kickoff
+  // ============================================================
 
   function init() {
     if (!isModulePage()) return;
@@ -368,7 +368,7 @@
   // re-register all listeners and observers.
   window.addEventListener("pageshow", (e) => {
     if (e.persisted) {
-      console.log(LOG, "bfcache restored — re-initializing");
+      console.log(LOG, "bfcache restored -- re-initializing");
       init();
       if (isExamsPage()) startExams();
     }
@@ -379,7 +379,7 @@
     hideOverlay();
     stopExams();
 
-    // Left the module page — remove controls and do nothing
+    // Left the module page -- remove controls and do nothing
     if (!isModulePage()) {
       const controls = document.getElementById("brot-topic-controls");
       if (controls) controls.remove();
@@ -414,22 +414,22 @@
   watchSettingsPopover();
   checkForUpdate();
 
-  // ── Kickoff ────────────────────────────────────────────────
+  // -- Kickoff ---------------------------------------------------------
 
   setTimeout(() => {
-    // Exams page — apply stats tweaks; module pages handled below
+    // Exams page -- apply stats tweaks; module pages handled below
     if (isExamsPage()) {
       startExams();
       return;
     }
 
-    // Requests page — auto-select Pending tab
+    // Requests page -- auto-select Pending tab
     if (isRequestsPage()) {
       autoSelectPendingTab();
       return;
     }
 
-    // Not a module page — stay idle; SPA watchers will handle entering one
+    // Not a module page -- stay idle; SPA watchers will handle entering one
     if (!isModulePage()) return;
     if (getContainers().length > 0) {
       init();

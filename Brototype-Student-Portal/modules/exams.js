@@ -1,6 +1,6 @@
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — exams page (delusion mode + last-5 exams card)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- exams page (delusion mode + last-5 exams card)
+  // ============================================================
   // Both tweaks are exams-page only, toggle-driven, and fully
   // reversible: originals are remembered and restored on teardown.
   // applyExams() is a no-op when nothing changes, so the observer
@@ -8,9 +8,9 @@
 
   let examsObserver = null;
   let examsScanTimer = null;
-  const delusionTextOrig = new Map(); // rate <p> → original text
-  const delusionTileOrig = new Map(); // h6 tile → original text (delusion)
-  const delusionBarOrig = new Map(); // split-bar segment → original width
+  const delusionTextOrig = new Map(); // rate <p> -> original text
+  const delusionTileOrig = new Map(); // h6 tile -> original text (delusion)
+  const delusionBarOrig = new Map(); // split-bar segment -> original width
 
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
   // also holds the "Total Attended" totals block.
@@ -48,8 +48,8 @@
     );
   }
 
-  // The replacement is a deep clone of the site's own stats card —
-  // identical layout (tiles, icons, dividers, rates, slider) — with the
+  // The replacement is a deep clone of the site's own stats card --
+  // identical layout (tiles, icons, dividers, rates, slider) -- with the
   // numbers recomputed over the last 5 completed exams. Bar segments
   // are fixed up after insertion (computed styles need a live node).
   function buildLast5Card(stats) {
@@ -74,7 +74,7 @@
     shell.style.outline = "2px solid " + (pct >= 50 ? COLORS.statusPass : COLORS.statusFail);
     shell.style.outlineOffset = "2px";
 
-    // Clear label line above the tiles (flex row → wrap it to full width)
+    // Clear label line above the tiles (flex row -> wrap it to full width)
     shell.style.flexWrap = "wrap";
     const head = document.createElement("div");
     head.textContent = "Last 5 exams";
@@ -88,7 +88,7 @@
     passP.textContent = pct + "% Pass Rate";
     failP.textContent = 100 - pct + "% Fail Rate";
 
-    // Keep the site action buttons — forward their clicks to the hidden
+    // Keep the site action buttons -- forward their clicks to the hidden
     // original card's live React buttons so they still work.
     const origBtns = [...stats.querySelectorAll("button")];
     [...shell.querySelectorAll("button")].forEach((b, i) => {
@@ -186,7 +186,7 @@
     }
     if (!delusion) restoreDelusion();
 
-    // Last 5 exams: slot the recomputed clone ABOVE the normal card —
+    // Last 5 exams: slot the recomputed clone ABOVE the normal card --
     // the original stays visible below it, fully live.
     const oldCard = document.getElementById("brot-last5-card");
     if (!last5) {
@@ -243,4 +243,4 @@
     if (key === "examStats" && isExamsPage()) applyExams();
   });
 
-  // ════════════════════════════════════════════════════════════
+  // ============================================================

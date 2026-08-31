@@ -1,6 +1,6 @@
-  // ════════════════════════════════════════════════════════════
-  // CORE — config & settings
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- config & settings
+  // ============================================================
 
   const PREFIX = "brot_topic5_";
   const LOG = "[MNM Companion]";
@@ -10,9 +10,9 @@
     examStats: "normal", // "normal" | "delusion" | "last5"
   };
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — color palette (single source of truth)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- color palette (single source of truth)
+  // ============================================================
 
   var COLORS = {
     // neutrals
@@ -90,9 +90,9 @@
     return /^\/requests([/?]|$)/.test(location.pathname);
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — event bus
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- event bus
+  // ============================================================
 
   const bus = {
     map: {},
@@ -111,23 +111,23 @@
   };
 
   // Events:
-  //   batch:expanded  { containers } — Expand All finished expanding
-  //   restore:done    — restore pass finished clicking topics
-  //   restore:settled — restore fully settled (safe to scroll)
-  //   upload:area-click — user clicked an "Add Attachments" area
+  //   batch:expanded  { containers } -- Expand All finished expanding
+  //   restore:done    -- restore pass finished clicking topics
+  //   restore:settled -- restore fully settled (safe to scroll)
+  //   upload:area-click -- user clicked an "Add Attachments" area
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — busy lock (shared by batch ops and restore passes)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- busy lock (shared by batch ops and restore passes)
+  // ============================================================
 
   const Lock = {
     busy: false,
     dirty: false,
   };
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — overlay
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- overlay
+  // ============================================================
 
   let overlayTimeout = null;
   let overlaySpin = null;
@@ -199,7 +199,7 @@
       // Safety: if the batch is still running after 30s, force-unlock
       // to prevent a permanent lock wedge.
       if (Lock.busy) {
-        console.warn(LOG, "overlay timeout — force-unlocking batch");
+        console.warn(LOG, "overlay timeout -- force-unlocking batch");
         Lock.busy = false;
         Lock.dirty = false;
       }
@@ -220,9 +220,9 @@
     if (el) el.remove();
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — DOM finder
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- DOM finder
+  // ============================================================
 
   function getModuleId() {
     const id = new URLSearchParams(location.search).get("id");
@@ -233,7 +233,7 @@
   }
 
   // H3 fix: dynamic DOM climb instead of hard-coded 3 levels.
-  // Walks up from h6 to find the first ancestor that has ≥2 children
+  // Walks up from h6 to find the first ancestor that has >=2 children
   // and contains the h6 in its first child.
   let usedFallback = false;
 
@@ -309,9 +309,9 @@
     return h6 ? h6.textContent.trim() : "";
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — state store
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- state store
+  // ============================================================
 
   function moduleKey() {
     return PREFIX + getModuleId();
@@ -338,9 +338,9 @@
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — shared styles (used by settings modal + upload tip)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- shared styles (used by settings modal + upload tip)
+  // ============================================================
 
   function ensureBrotStyles() {
     if (document.getElementById("brot-styles")) return;

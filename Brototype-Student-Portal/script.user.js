@@ -19,9 +19,9 @@
   // DOM watch, SPA, init). Features talk through the bus, never into
   // each other, so one fix can't ripple sideways.
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — config & settings
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- config & settings
+  // ============================================================
 
   const PREFIX = "brot_topic5_";
   const LOG = "[MNM Companion]";
@@ -31,9 +31,9 @@
     examStats: "normal", // "normal" | "delusion" | "last5"
   };
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — color palette (single source of truth)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- color palette (single source of truth)
+  // ============================================================
 
   var COLORS = {
     // neutrals
@@ -111,9 +111,9 @@
     return /^\/requests([/?]|$)/.test(location.pathname);
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — event bus
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- event bus
+  // ============================================================
 
   const bus = {
     map: {},
@@ -132,23 +132,23 @@
   };
 
   // Events:
-  //   batch:expanded  { containers } — Expand All finished expanding
-  //   restore:done    — restore pass finished clicking topics
-  //   restore:settled — restore fully settled (safe to scroll)
-  //   upload:area-click — user clicked an "Add Attachments" area
+  //   batch:expanded  { containers } -- Expand All finished expanding
+  //   restore:done    -- restore pass finished clicking topics
+  //   restore:settled -- restore fully settled (safe to scroll)
+  //   upload:area-click -- user clicked an "Add Attachments" area
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — busy lock (shared by batch ops and restore passes)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- busy lock (shared by batch ops and restore passes)
+  // ============================================================
 
   const Lock = {
     busy: false,
     dirty: false,
   };
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — overlay
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- overlay
+  // ============================================================
 
   let overlayTimeout = null;
   let overlaySpin = null;
@@ -220,7 +220,7 @@
       // Safety: if the batch is still running after 30s, force-unlock
       // to prevent a permanent lock wedge.
       if (Lock.busy) {
-        console.warn(LOG, "overlay timeout — force-unlocking batch");
+        console.warn(LOG, "overlay timeout -- force-unlocking batch");
         Lock.busy = false;
         Lock.dirty = false;
       }
@@ -241,9 +241,9 @@
     if (el) el.remove();
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — DOM finder
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- DOM finder
+  // ============================================================
 
   function getModuleId() {
     const id = new URLSearchParams(location.search).get("id");
@@ -254,7 +254,7 @@
   }
 
   // H3 fix: dynamic DOM climb instead of hard-coded 3 levels.
-  // Walks up from h6 to find the first ancestor that has ≥2 children
+  // Walks up from h6 to find the first ancestor that has >=2 children
   // and contains the h6 in its first child.
   let usedFallback = false;
 
@@ -330,9 +330,9 @@
     return h6 ? h6.textContent.trim() : "";
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — state store
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- state store
+  // ============================================================
 
   function moduleKey() {
     return PREFIX + getModuleId();
@@ -359,9 +359,9 @@
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  // CORE — shared styles (used by settings modal + upload tip)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // CORE -- shared styles (used by settings modal + upload tip)
+  // ============================================================
 
   function ensureBrotStyles() {
     if (document.getElementById("brot-styles")) return;
@@ -422,9 +422,9 @@
     ].join("\n");
     document.head.appendChild(st);
   }
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — settings UI (profile-popover entry + modal)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- settings UI (profile-popover entry + modal)
+  // ============================================================
   // Global: the header popover exists on every page, not just modules.
   // Anchored by stable text ("Theme Mode"), never by MUI hash classes.
 
@@ -596,7 +596,7 @@
       "Show the \u201caniya nill\u201d art on loading overlays (off = spinner)",
     );
 
-    // Exam stats: 3-way segmented control — Normal (default) in the middle
+    // Exam stats: 3-way segmented control -- Normal (default) in the middle
     const examRow = document.createElement("div");
     examRow.style.cssText = "padding:10px 2px;";
     const exLbl = document.createElement("div");
@@ -741,12 +741,12 @@
     document.body.appendChild(backdrop);
   }
 
-  // ════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════
-  // FEATURE — read-more
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+// ============================================================
+  // FEATURE -- read-more
+  // ============================================================
 
-  // Style-2 fix: expanded content can be the container's next sibling —
+  // Style-2 fix: expanded content can be the container's next sibling --
   // scan that instead of container.children when present.
   function clickReadMore(container) {
     const sib = container.nextElementSibling;
@@ -779,18 +779,18 @@
 
   function initReadMore() {
     bus.on("batch:expanded", () => {
-      // All expanded topics, not just the toggled ones — topics that were
+      // All expanded topics, not just the toggled ones -- topics that were
       // already open before the batch keep their "Read more" otherwise.
       getContainers().filter(isExpanded).forEach(clickReadMore);
     });
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — batch controls (Expand/Collapse All + counter)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- batch controls (Expand/Collapse All + counter)
+  // ============================================================
 
   function findAnchor() {
-    // Strategy 1: "Total Topics: N" overview row — insert panel inside
+    // Strategy 1: "Total Topics: N" overview row -- insert panel inside
     // the flex row (right-aligned, before any action buttons).
     const totalTopicsP = Array.from(document.querySelectorAll("p")).find(
       (p) => /Total Topics:\s*\d+/i.test(p.textContent.trim()),
@@ -849,7 +849,7 @@
     }
   }
 
-  // ── Visual theme for the control panel ─────────────────────────
+  // -- Visual theme for the control panel --------------------------------
   // Ported from the companion script: a single injected stylesheet
   // using color-mix(currentColor) so borders/hover states adapt to
   // light or dark pages automatically, no manual isDark detection
@@ -987,14 +987,14 @@
   }
 
   // React re-renders can detach a scanned container before the staggered
-  // click fires — re-resolve the live node by title at click time.
+  // click fires -- re-resolve the live node by title at click time.
   function liveContainer(c) {
     if (c.isConnected) return c;
     const t = getTitle(c);
     return (t && getContainers().find((x) => getTitle(x) === t)) || null;
   }
 
-  // H2 fix: click the container itself — React onClick lives here
+  // H2 fix: click the container itself -- React onClick lives here
   function clickHeader(c) {
     const live = liveContainer(c);
     if (live) live.click();
@@ -1013,7 +1013,7 @@
       return;
     }
 
-    // Capture module ID at batch start — detect cross-module navigation
+    // Capture module ID at batch start -- detect cross-module navigation
     // mid-batch to prevent writing the wrong module's state.
     const batchModuleId = getModuleId();
 
@@ -1041,14 +1041,14 @@
     function finishBatch() {
       // Cross-module guard: user navigated away mid-batch
       if (getModuleId() !== batchModuleId) {
-        console.warn(LOG, "batch aborted — module changed during operation");
+        console.warn(LOG, "batch aborted -- module changed during operation");
         unlockAll();
         return;
       }
 
       bus.emit("batch:expanded", { containers: toToggle });
 
-      // Write the end-state once — the per-topic listener is muted
+      // Write the end-state once -- the per-topic listener is muted
       // while Lock.busy, so the batch owns the save.
       const st = load();
       getContainers().forEach((c) => {
@@ -1084,7 +1084,7 @@
     function verifyRepair() {
       // Cross-module guard
       if (getModuleId() !== batchModuleId) {
-        console.warn(LOG, "verifyRepair aborted — module changed");
+        console.warn(LOG, "verifyRepair aborted -- module changed");
         unlockAll();
         return;
       }
@@ -1117,9 +1117,9 @@
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — state memory (per-topic listeners + restore)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- state memory (per-topic listeners + restore)
+  // ============================================================
 
   function attach() {
     getContainers().forEach((c) => {
@@ -1145,7 +1145,7 @@
       c.addEventListener("click", function onClick(e) {
         const now = Date.now();
         // Only debounce synthetic clicks (our own c.click() batch ops).
-        // Real user clicks are never swallowed — e.g. a fast click right
+        // Real user clicks are never swallowed -- e.g. a fast click right
         // after Expand/Collapse All on the same topic still registers.
         if (!e.isTrusted && now - lastClick < 200) return;
         lastClick = now;
@@ -1156,7 +1156,7 @@
         if (Lock.busy) return;
 
         // Check click was on the header area (not on expanded content inside the container).
-        // Synthetic clicks (c.click()) have target === c — treat those as header clicks too.
+        // Synthetic clicks (c.click()) have target === c -- treat those as header clicks too.
         let el = e.target;
         let onHeader = el === c;
         if (headerEl && !onHeader) {
@@ -1195,7 +1195,7 @@
       return;
     }
 
-    // Capture module ID — detect cross-module navigation during restore
+    // Capture module ID -- detect cross-module navigation during restore
     const restoreModuleId = getModuleId();
 
     Lock.busy = true;
@@ -1287,9 +1287,9 @@
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — auto-scroll to last expanded topic
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- auto-scroll to last expanded topic
+  // ============================================================
 
   // M4 fix: track scroll timeout, clear on nav/unload
   let scrollTimeout = null;
@@ -1354,9 +1354,9 @@
     bus.on("restore:settled", scrollToLast);
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — upload tip toast
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- upload tip toast
+  // ============================================================
 
   // Shows a dismissible tip when the user clicks "Add Attachments" while
   // other topics are still open. Auto-scroll to the last upload only
@@ -1504,9 +1504,9 @@
   }
 
   document.addEventListener("click", onUploadAreaClick, true);
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — exams page (delusion mode + last-5 exams card)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- exams page (delusion mode + last-5 exams card)
+  // ============================================================
   // Both tweaks are exams-page only, toggle-driven, and fully
   // reversible: originals are remembered and restored on teardown.
   // applyExams() is a no-op when nothing changes, so the observer
@@ -1514,9 +1514,9 @@
 
   let examsObserver = null;
   let examsScanTimer = null;
-  const delusionTextOrig = new Map(); // rate <p> → original text
-  const delusionTileOrig = new Map(); // h6 tile → original text (delusion)
-  const delusionBarOrig = new Map(); // split-bar segment → original width
+  const delusionTextOrig = new Map(); // rate <p> -> original text
+  const delusionTileOrig = new Map(); // h6 tile -> original text (delusion)
+  const delusionBarOrig = new Map(); // split-bar segment -> original width
 
   // The stats card is the ancestor of a "% Pass Rate" paragraph that
   // also holds the "Total Attended" totals block.
@@ -1554,8 +1554,8 @@
     );
   }
 
-  // The replacement is a deep clone of the site's own stats card —
-  // identical layout (tiles, icons, dividers, rates, slider) — with the
+  // The replacement is a deep clone of the site's own stats card --
+  // identical layout (tiles, icons, dividers, rates, slider) -- with the
   // numbers recomputed over the last 5 completed exams. Bar segments
   // are fixed up after insertion (computed styles need a live node).
   function buildLast5Card(stats) {
@@ -1580,7 +1580,7 @@
     shell.style.outline = "2px solid " + (pct >= 50 ? COLORS.statusPass : COLORS.statusFail);
     shell.style.outlineOffset = "2px";
 
-    // Clear label line above the tiles (flex row → wrap it to full width)
+    // Clear label line above the tiles (flex row -> wrap it to full width)
     shell.style.flexWrap = "wrap";
     const head = document.createElement("div");
     head.textContent = "Last 5 exams";
@@ -1594,7 +1594,7 @@
     passP.textContent = pct + "% Pass Rate";
     failP.textContent = 100 - pct + "% Fail Rate";
 
-    // Keep the site action buttons — forward their clicks to the hidden
+    // Keep the site action buttons -- forward their clicks to the hidden
     // original card's live React buttons so they still work.
     const origBtns = [...stats.querySelectorAll("button")];
     [...shell.querySelectorAll("button")].forEach((b, i) => {
@@ -1692,7 +1692,7 @@
     }
     if (!delusion) restoreDelusion();
 
-    // Last 5 exams: slot the recomputed clone ABOVE the normal card —
+    // Last 5 exams: slot the recomputed clone ABOVE the normal card --
     // the original stays visible below it, fully live.
     const oldCard = document.getElementById("brot-last5-card");
     if (!last5) {
@@ -1749,10 +1749,10 @@
     if (key === "examStats" && isExamsPage()) applyExams();
   });
 
-  // ════════════════════════════════════════════════════════════
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — teardown registry
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // ============================================================
+  // RUNTIME -- teardown registry
+  // ============================================================
 
   const navTeardowns = [];
   const pageTeardowns = [];
@@ -1789,9 +1789,9 @@
     list.length = 0;
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — DOM watch (survive React re-renders)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- DOM watch (survive React re-renders)
+  // ============================================================
 
   const Watch = {
     observer: null,
@@ -1812,7 +1812,7 @@
         // Fix: instead of checking "controls + topics exist" (which
         // short-circuits after React re-renders when the header survives
         // but topic nodes are replaced), check if any current container
-        // is unbound — missing the data-brotListener marker.
+        // is unbound -- missing the data-brotListener marker.
         const containers = getContainers();
         const hasUnbound = containers.some((c) => !c.dataset.brotListener);
         if (!hasUnbound) return;
@@ -1853,9 +1853,9 @@
     },
   };
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — Esc = hard refresh
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- Esc = hard refresh
+  // ============================================================
 
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
@@ -1872,9 +1872,9 @@
     location.reload();
   });
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — update checker
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- update checker
+  // ============================================================
 
   const UPDATE_URL =
     "https://raw.githubusercontent.com/nabhan-007/JS-UserScripts/main/Brototype-Student-Portal/script.user.js";
@@ -2043,9 +2043,9 @@
       .catch(function () {});
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — requests auto-select Pending tab
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- requests auto-select Pending tab
+  // ============================================================
 
   function autoSelectPendingTab() {
     let attempts = 0;
@@ -2074,9 +2074,9 @@
     })();
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RUNTIME — init, SPA navigation, unload, kickoff
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // RUNTIME -- init, SPA navigation, unload, kickoff
+  // ============================================================
 
   function init() {
     if (!isModulePage()) return;
@@ -2120,7 +2120,7 @@
   // re-register all listeners and observers.
   window.addEventListener("pageshow", (e) => {
     if (e.persisted) {
-      console.log(LOG, "bfcache restored — re-initializing");
+      console.log(LOG, "bfcache restored -- re-initializing");
       init();
       if (isExamsPage()) startExams();
     }
@@ -2131,7 +2131,7 @@
     hideOverlay();
     stopExams();
 
-    // Left the module page — remove controls and do nothing
+    // Left the module page -- remove controls and do nothing
     if (!isModulePage()) {
       const controls = document.getElementById("brot-topic-controls");
       if (controls) controls.remove();
@@ -2166,22 +2166,22 @@
   watchSettingsPopover();
   checkForUpdate();
 
-  // ── Kickoff ────────────────────────────────────────────────
+  // -- Kickoff ---------------------------------------------------------
 
   setTimeout(() => {
-    // Exams page — apply stats tweaks; module pages handled below
+    // Exams page -- apply stats tweaks; module pages handled below
     if (isExamsPage()) {
       startExams();
       return;
     }
 
-    // Requests page — auto-select Pending tab
+    // Requests page -- auto-select Pending tab
     if (isRequestsPage()) {
       autoSelectPendingTab();
       return;
     }
 
-    // Not a module page — stay idle; SPA watchers will handle entering one
+    // Not a module page -- stay idle; SPA watchers will handle entering one
     if (!isModulePage()) return;
     if (getContainers().length > 0) {
       init();

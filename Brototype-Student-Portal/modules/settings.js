@@ -1,6 +1,6 @@
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — settings UI (profile-popover entry + modal)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- settings UI (profile-popover entry + modal)
+  // ============================================================
   // Global: the header popover exists on every page, not just modules.
   // Anchored by stable text ("Theme Mode"), never by MUI hash classes.
 
@@ -172,7 +172,7 @@
       "Show the \u201caniya nill\u201d art on loading overlays (off = spinner)",
     );
 
-    // Exam stats: 3-way segmented control — Normal (default) in the middle
+    // Exam stats: 3-way segmented control -- Normal (default) in the middle
     const examRow = document.createElement("div");
     examRow.style.cssText = "padding:10px 2px;";
     const exLbl = document.createElement("div");
@@ -317,4 +317,4 @@
     document.body.appendChild(backdrop);
   }
 
-  // ════════════════════════════════════════════════════════════
+  // ============================================================

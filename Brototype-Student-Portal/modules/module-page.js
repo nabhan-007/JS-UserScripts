@@ -1,8 +1,8 @@
-// ════════════════════════════════════════════════════════════
-  // FEATURE — read-more
-  // ════════════════════════════════════════════════════════════
+// ============================================================
+  // FEATURE -- read-more
+  // ============================================================
 
-  // Style-2 fix: expanded content can be the container's next sibling —
+  // Style-2 fix: expanded content can be the container's next sibling --
   // scan that instead of container.children when present.
   function clickReadMore(container) {
     const sib = container.nextElementSibling;
@@ -35,18 +35,18 @@
 
   function initReadMore() {
     bus.on("batch:expanded", () => {
-      // All expanded topics, not just the toggled ones — topics that were
+      // All expanded topics, not just the toggled ones -- topics that were
       // already open before the batch keep their "Read more" otherwise.
       getContainers().filter(isExpanded).forEach(clickReadMore);
     });
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — batch controls (Expand/Collapse All + counter)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- batch controls (Expand/Collapse All + counter)
+  // ============================================================
 
   function findAnchor() {
-    // Strategy 1: "Total Topics: N" overview row — insert panel inside
+    // Strategy 1: "Total Topics: N" overview row -- insert panel inside
     // the flex row (right-aligned, before any action buttons).
     const totalTopicsP = Array.from(document.querySelectorAll("p")).find(
       (p) => /Total Topics:\s*\d+/i.test(p.textContent.trim()),
@@ -105,7 +105,7 @@
     }
   }
 
-  // ── Visual theme for the control panel ─────────────────────────
+  // -- Visual theme for the control panel --------------------------------
   // Ported from the companion script: a single injected stylesheet
   // using color-mix(currentColor) so borders/hover states adapt to
   // light or dark pages automatically, no manual isDark detection
@@ -243,14 +243,14 @@
   }
 
   // React re-renders can detach a scanned container before the staggered
-  // click fires — re-resolve the live node by title at click time.
+  // click fires -- re-resolve the live node by title at click time.
   function liveContainer(c) {
     if (c.isConnected) return c;
     const t = getTitle(c);
     return (t && getContainers().find((x) => getTitle(x) === t)) || null;
   }
 
-  // H2 fix: click the container itself — React onClick lives here
+  // H2 fix: click the container itself -- React onClick lives here
   function clickHeader(c) {
     const live = liveContainer(c);
     if (live) live.click();
@@ -269,7 +269,7 @@
       return;
     }
 
-    // Capture module ID at batch start — detect cross-module navigation
+    // Capture module ID at batch start -- detect cross-module navigation
     // mid-batch to prevent writing the wrong module's state.
     const batchModuleId = getModuleId();
 
@@ -297,14 +297,14 @@
     function finishBatch() {
       // Cross-module guard: user navigated away mid-batch
       if (getModuleId() !== batchModuleId) {
-        console.warn(LOG, "batch aborted — module changed during operation");
+        console.warn(LOG, "batch aborted -- module changed during operation");
         unlockAll();
         return;
       }
 
       bus.emit("batch:expanded", { containers: toToggle });
 
-      // Write the end-state once — the per-topic listener is muted
+      // Write the end-state once -- the per-topic listener is muted
       // while Lock.busy, so the batch owns the save.
       const st = load();
       getContainers().forEach((c) => {
@@ -340,7 +340,7 @@
     function verifyRepair() {
       // Cross-module guard
       if (getModuleId() !== batchModuleId) {
-        console.warn(LOG, "verifyRepair aborted — module changed");
+        console.warn(LOG, "verifyRepair aborted -- module changed");
         unlockAll();
         return;
       }
@@ -373,9 +373,9 @@
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — state memory (per-topic listeners + restore)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- state memory (per-topic listeners + restore)
+  // ============================================================
 
   function attach() {
     getContainers().forEach((c) => {
@@ -401,7 +401,7 @@
       c.addEventListener("click", function onClick(e) {
         const now = Date.now();
         // Only debounce synthetic clicks (our own c.click() batch ops).
-        // Real user clicks are never swallowed — e.g. a fast click right
+        // Real user clicks are never swallowed -- e.g. a fast click right
         // after Expand/Collapse All on the same topic still registers.
         if (!e.isTrusted && now - lastClick < 200) return;
         lastClick = now;
@@ -412,7 +412,7 @@
         if (Lock.busy) return;
 
         // Check click was on the header area (not on expanded content inside the container).
-        // Synthetic clicks (c.click()) have target === c — treat those as header clicks too.
+        // Synthetic clicks (c.click()) have target === c -- treat those as header clicks too.
         let el = e.target;
         let onHeader = el === c;
         if (headerEl && !onHeader) {
@@ -451,7 +451,7 @@
       return;
     }
 
-    // Capture module ID — detect cross-module navigation during restore
+    // Capture module ID -- detect cross-module navigation during restore
     const restoreModuleId = getModuleId();
 
     Lock.busy = true;
@@ -543,9 +543,9 @@
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — auto-scroll to last expanded topic
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- auto-scroll to last expanded topic
+  // ============================================================
 
   // M4 fix: track scroll timeout, clear on nav/unload
   let scrollTimeout = null;
@@ -610,9 +610,9 @@
     bus.on("restore:settled", scrollToLast);
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FEATURE — upload tip toast
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
+  // FEATURE -- upload tip toast
+  // ============================================================
 
   // Shows a dismissible tip when the user clicks "Add Attachments" while
   // other topics are still open. Auto-scroll to the last upload only
