@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Copy Pendings Button - Interactive Variations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, "Segoe UI", sans-serif; background: #f1f2f4; color: #1a1a1a; padding: 32px 20px; }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .sub { font-size: 13px; color: #888; margin-bottom: 8px; max-width: 860px; }
+  .hint { font-size: 13px; color: #109d58; margin-bottom: 28px; font-weight: 600; }
+  .variant { background: #fff; border: 1px solid #e2e2e2; border-radius: 14px; padding: 24px; margin-bottom: 28px; max-width: 860px; }
+  .variant h2 { font-size: 15px; margin-bottom: 4px; }
+  .variant p.desc { font-size: 12.5px; color: #666; margin-bottom: 16px; }
+  .variant p.desc b { color: #1a1a1a; }
+  .panel { border: 1px solid #e2e2e2; border-radius: 12px; overflow: hidden; background: #fff; position: relative; }
+  .tabrow { display: flex; gap: 4px; padding: 10px 14px; border-bottom: 1px solid #efefef; align-items: center; }
+  .tab { font-size: 13px; padding: 6px 10px; color: #444; border-radius: 6px; }
+  .tab.active { color: #1976d2; font-weight: 600; background: rgba(25,118,210,.08); }
+  .pbody { height: 200px; overflow-y: auto; padding: 14px 16px; font-size: 13px; line-height: 1.65; color: #333; }
+  .pbody p { white-space: pre-line; }
+  .cbtn { position: sticky; top: 8px; float: right; margin: 0 0 8px 8px; z-index: 2; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .cbtn svg { flex-shrink: 0; }
+  /* tap physics shared by all */
+  .cbtn:active { transform: scale(.94); }
+  .cbtn { transition: transform .08s ease, background .15s, color .15s, border-color .15s; }
+  /* W1 github icon */
+  .w1 { width: 32px; height: 32px; justify-content: center; border: 1px solid #e2e2e2; background: #fff; border-radius: 8px; color: #444; }
+  .w1:hover { background: #f7f7f7; color: #111; }
+  .w1 .tip { position: absolute; top: calc(100% + 6px); right: 0; background: #111; color: #fff; font-size: 11.5px; font-weight: 500; padding: 5px 10px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .w1:hover .tip { opacity: 1; }
+  .w1.ok { border-color: #109d58; color: #109d58; }
+  .w1.ok .tip { opacity: 1; }
+  /* W2 morph pill */
+  .w2 { min-width: 118px; justify-content: center; border: 1px solid #e2e2e2; background: #fff; color: #1a1a1a; border-radius: 999px; padding: 8px 16px; font: 600 13px/1 Inter, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .w2:hover { background: #f7f7f7; }
+  .w2.ok { background: #109d58; border-color: #109d58; color: #fff; }
+  /* W3 anchored bubble */
+  .w3 { border: 1px solid #e2e2e2; background: #111; color: #fff; border-radius: 8px; padding: 8px 14px; font: 600 13px/1 Inter, sans-serif; }
+  .w3:hover { background: #333; }
+  .bubble { position: sticky; top: 8px; float: right; margin: 0 0 8px 8px; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; }
+  .bubble .msg { margin-top: 6px; background: #111; color: #fff; font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; transform: translateY(-4px); transition: opacity .18s, transform .18s; pointer-events: none; }
+  .bubble.show .msg { opacity: 1; transform: translateY(0); }
+  /* W4 animated draw */
+  .w4 { width: 36px; height: 36px; justify-content: center; border: 1px solid #e2e2e2; background: #fff; border-radius: 50%; color: #444; }
+  .w4:hover { background: #f7f7f7; color: #111; }
+  .w4.ok { border-color: #109d58; }
+  .w4 .draw { stroke-dasharray: 30; stroke-dashoffset: 30; }
+  .w4.ok .draw { animation: draw .3s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  /* W5 context bar */
+  .ctxbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 16px; background: #fafafa; border-bottom: 1px solid #efefef; font-size: 12px; color: #888; }
+  .w5 { border: 1px solid #e2e2e2; background: #fff; color: #1a1a1a; border-radius: 6px; padding: 6px 12px; font: 600 12.5px/1 Inter, sans-serif; position: static; float: none; margin: 0; }
+  .w5:hover { background: #f0f0f0; }
+  .w5.ok { background: #109d58; border-color: #109d58; color: #fff; }
+</style>
+</head>
+<body>
+<h1>Copy Pendings Button - 5 Clickable Variations</h1>
+<div class="sub">Every button below <b>really works</b> - click it and the panel's sample text goes to your clipboard, with that design's real feedback behavior. Pick the feel you like, not just the look.</div>
+<div class="hint" id="clip-hint">Clipboard ready - click any Copy button, then paste anywhere to verify.</div>
+
+<div class="variant">
+  <h2>W1 - GitHub icon + tooltip (industry standard)</h2>
+  <p class="desc">The pattern from GitHub, VS Code, npm docs: <b>icon-only button, clipboard morphs into a green check</b>, tooltip flips "Copy" to "Copied". Smallest footprint. Risk: icon-only needs a beat to learn.</p>
+  <div class="panel"><div class="tabrow"><span class="tab">Details</span><span class="tab active">Previous Pendings</span><span class="tab">Current Pendings</span></div><div class="pbody"><button class="cbtn w1" data-sample="s1" aria-label="Copy pendings"><svg class="ic-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="ic-ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg><span class="tip">Copy</span></button><p id="s1">Pendings
+
+TASK:
+- Fix login redirect
+
+Communication: Good</p></div></div>
+</div>
+
+<div class="variant">
+  <h2>W2 - Morphing pill (label + icon swap)</h2>
+  <p class="desc">Full pill with icon and word: <b>white "Copy" morphs into a solid green "Copied"</b>, icon swaps clipboard for check. Unmissable confirmation, fixed width so nothing jumps.</p>
+  <div class="panel"><div class="tabrow"><span class="tab">Details</span><span class="tab active">Previous Pendings</span><span class="tab">Current Pendings</span></div><div class="pbody"><button class="cbtn w2" data-sample="s2"><svg class="ic-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="ic-ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg><span class="lbl">Copy</span></button><p id="s2">Pendings
+
+TASK:
+- Fix login redirect
+
+Communication: Good</p></div></div>
+</div>
+
+<div class="variant">
+  <h2>W3 - Dark button + anchored bubble</h2>
+  <p class="desc">Solid dark button (matches the script's Done buttons); on click a <b>confirmation bubble pops under it</b>: "Pendings copied". Button itself never changes, so no relabel flicker.</p>
+  <div class="panel"><div class="tabrow"><span class="tab">Details</span><span class="tab active">Previous Pendings</span><span class="tab">Current Pendings</span></div><div class="pbody"><span class="bubble" id="bub3"><button class="cbtn w3" data-sample="s3" style="position:static;float:none;margin:0">Copy</button><span class="msg">Pendings copied to clipboard</span></span><p id="s3">Pendings
+
+TASK:
+- Fix login redirect
+
+Communication: Good</p></div></div>
+</div>
+
+<div class="variant">
+  <h2>W4 - Round button, animated check draw-in</h2>
+  <p class="desc">Circular icon button with <b>press-down physics and a checkmark that draws itself</b> (stroke animation, ~300ms). The most "alive" option; still tiny and quiet at rest.</p>
+  <div class="panel"><div class="tabrow"><span class="tab">Details</span><span class="tab active">Previous Pendings</span><span class="tab">Current Pendings</span></div><div class="pbody"><button class="cbtn w4" data-sample="s4" aria-label="Copy pendings"><svg class="ic-copy" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="ic-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#109d58" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline class="draw" points="20 6 9 17 4 12"/></svg></button><p id="s4">Pendings
+
+TASK:
+- Fix login redirect
+
+Communication: Good</p></div></div>
+</div>
+
+<div class="variant">
+  <h2>W5 - Context bar ("Previous Pendings | Copy")</h2>
+  <p class="desc">Instead of floating over text: a slim bar docked under the tabs naming <b>what</b> you'll copy + the button. Zero ambiguity, zero text overlap. Costs one row of vertical space.</p>
+  <div class="panel"><div class="tabrow"><span class="tab">Details</span><span class="tab active">Previous Pendings</span><span class="tab">Current Pendings</span></div><div class="ctxbar"><span>Showing: Previous Pendings</span><button class="cbtn w5" data-sample="s5"><span class="lbl">Copy</span></button></div><div class="pbody"><p id="s5">Pendings
+
+TASK:
+- Fix login redirect
+
+Communication: Good</p></div></div>
+</div>
+
+<script>
+  function realCopy(text, ok) {
+    function done() { ok(true); }
+    function fail() { ok(false); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); ta.remove(); done();
+        } catch (e) { fail(); }
+      });
+    } else { fail(); }
+  }
+  document.querySelectorAll('.cbtn[data-sample]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = document.getElementById(btn.dataset.sample).innerText;
+      realCopy('Module 10 - Pendings\n\n' + text, function (ok) {
+        if (!ok) return;
+        btn.classList.add('ok');
+        var a = btn.querySelector('.ic-copy'), b = btn.querySelector('.ic-ok');
+        if (a) a.style.display = 'none';
+        if (b) { b.style.display = ''; var d = b.querySelector('.draw'); if (d) { d.style.animation = 'none'; void d.getBoundingClientRect(); d.style.animation = ''; } }
+        var tip = btn.querySelector('.tip'); if (tip) tip.textContent = 'Copied';
+        var lbl = btn.querySelector('.lbl'); if (lbl) lbl.textContent = 'Copied';
+        var bub = document.getElementById('bub3');
+        if (btn.classList.contains('w3') && bub) bub.classList.add('show');
+        setTimeout(function () {
+          btn.classList.remove('ok');
+          if (a) a.style.display = '';
+          if (b) b.style.display = 'none';
+          if (tip) tip.textContent = 'Copy';
+          if (lbl) lbl.textContent = 'Copy';
+          if (bub) bub.classList.remove('show');
+        }, 1600);
+      });
+    });
+  });
+  if (!(navigator.clipboard && navigator.clipboard.writeText)) {
+    document.getElementById('clip-hint').textContent = 'Clipboard API blocked here - buttons will still animate, but verify paste in the real portal.';
+  }
+</script>
+</body>
+</html>

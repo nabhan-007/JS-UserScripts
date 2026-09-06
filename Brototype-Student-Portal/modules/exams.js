@@ -139,6 +139,7 @@
   }
 
   function applyExams() {
+    injectCopyPendings();
     const mode = loadSettings().examStats || "normal";
     const delusion = mode === "delusion";
     const last5 = mode === "last5";
@@ -202,6 +203,227 @@
     fixLast5Bar(shell);
   }
 
+  // ============================================================
+  // FEATURE -- copy pendings button (TODO #3)
+  // ============================================================
+  // One shared "Copy" button, sticky top-right inside the visible
+  // pendings text panel. Copies the panel text with a
+  // "Module N - Pendings" header. Shown only while a pendings tab is
+  // active; re-injected idempotently from applyExams() (the body panel
+  // is re-rendered on every tab switch), removed by stopExams().
+  //
+  // Module rule: on a 1st-attempt exam the Previous Pendings belong to
+  // the previous module, so the header says Module N-1 (floored at 1).
+  // Otherwise the header uses the exam's own module number.
+  //
+  // Stable hooks (no MUI hash classes):
+  //   prev body  -- [data-testid="review-previous-pending-tab"] > p
+  //   curr body  -- [data-testid="review-pending-topic-tab"] > p
+  // Active tab = whichever container is rendered (React only renders
+  // the visible tab body). The button-odd-one-out check covers the
+  // case where both are somehow present.
+
+  const PENDING_TABS = [
+    { kind: "Previous Pendings", testid: "review-previous-pending-tab", prev: true },
+    { kind: "Current Pendings", testid: "review-pending-topic-tab", prev: false },
+  ];
+
+  function findDetailPaper() {
+    return (
+      [...document.querySelectorAll("div.MuiPaper-root")].find((p) => {
+        const t = p.textContent || "";
+        return /Details/.test(t) && /Pendings/.test(t);
+      }) || null
+    );
+  }
+
+  function activePendings(paper) {
+    let kind = null;
+    const tabs = [...paper.querySelectorAll("button")].filter((b) =>
+      /Details|Pendings|Marks/.test(b.textContent.trim()),
+    );
+    if (tabs.length > 1) {
+      const counts = {};
+      tabs.forEach((b) => {
+        counts[b.className] = (counts[b.className] || 0) + 1;
+      });
+      let majority = null;
+      let max = 0;
+      for (const c in counts) {
+        if (counts[c] > max) {
+          max = counts[c];
+          majority = c;
+        }
+      }
+      const odd = tabs.find((b) => b.className !== majority);
+      if (odd && /Pendings/.test(odd.textContent.trim())) {
+        kind = odd.textContent.trim();
+      }
+    }
+    const byKind = (k) => PENDING_TABS.find((t) => t.kind === k);
+    const boxOf = (t) =>
+      t && paper.querySelector('[data-testid="' + t.testid + '"]');
+    let tab = byKind(kind);
+    let box = boxOf(tab);
+    if (!box) {
+      // Button signal missing/mismatched -- trust the rendered container
+      tab = PENDING_TABS.find((t) => boxOf(t));
+      box = boxOf(tab);
+    }
+    if (!tab || !box) return null;
+    const text = (box.textContent || "").trim();
+    if (!text) return null;
+    return { kind: tab.kind, text };
+  }
+
+  // Header chip reads e.g. "Module 10 , 1st attempt".
+  function detailModuleNum(paper) {
+    const t = paper.textContent || "";
+    let m = t.match(/Module\s+(\d+)\s*,\s*(\d+)\s*(?:st|nd|rd|th)?\s*attempt/i);
+    if (m) return { n: parseInt(m[1], 10), attempt: parseInt(m[2], 10) };
+    m = t.match(/Module\s+(\d+)/i);
+    if (m) return { n: parseInt(m[1], 10), attempt: 0 };
+    return { n: 0, attempt: 0 };
+  }
+
+  function pendingsHeader(paper, isPrev) {
+    const info = detailModuleNum(paper);
+    let n = info.n;
+    if (isPrev && info.attempt === 1 && n > 1) n = n - 1;
+    return "Module " + (n > 0 ? n : "?") + " - Pendings";
+  }
+
+  // W1 icons (inline SVG, ASCII-only so no encoding risk)
+  const COPY_ICON =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+    'stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/>' +
+    '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const CHECK_ICON =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+    'stroke-linejoin="round">' +
+    '<polyline points="20 6 9 17 4 12"/></svg>';
+
+  function flashCopyBtn(btn) {
+    const icCopy = btn.querySelector(".brot-ic-copy");
+    const icOk = btn.querySelector(".brot-ic-ok");
+    const tip = btn.querySelector(".brot-tip");
+    btn.classList.add("done");
+    btn.setAttribute("aria-label", "Pendings copied to clipboard");
+    if (icCopy) icCopy.style.display = "none";
+    if (icOk) icOk.style.display = "";
+    if (tip) tip.textContent = "Copied";
+    setTimeout(() => {
+      if (!btn.isConnected) return;
+      btn.classList.remove("done");
+      btn.setAttribute("aria-label", "Copy pendings to clipboard");
+      if (icCopy) icCopy.style.display = "";
+      if (icOk) icOk.style.display = "none";
+      if (tip) tip.textContent = "Copy";
+    }, 1600);
+  }
+
+  function fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;opacity:0;";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      done();
+    } catch (e) {
+      console.warn(LOG, "copy failed:", e);
+    }
+  }
+
+  function copyPendingsText(full, btn) {
+    const done = () => flashCopyBtn(btn);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(done, () =>
+        fallbackCopy(full, done),
+      );
+    } else {
+      fallbackCopy(full, done);
+    }
+  }
+
+  function injectCopyPendings() {
+    if (!isExamsPage()) return;
+    const paper = findDetailPaper();
+    const active = paper && activePendings(paper);
+    let btn = document.getElementById("brot-copy-pendings");
+    // Body panel is re-rendered per tab switch -- stale node check first
+    if (btn && !btn.isConnected) btn.remove();
+    if (!paper || !active) {
+      btn = document.getElementById("brot-copy-pendings");
+      if (btn) btn.remove();
+      return;
+    }
+    if (document.getElementById("brot-copy-pendings")) return; // in place
+    const tab = PENDING_TABS.find((t) => t.kind === active.kind);
+    const box = tab && paper.querySelector('[data-testid="' + tab.testid + '"]');
+    const scroller = box && box.parentElement;
+    if (!scroller) return;
+
+    if (!document.getElementById("brot-copy-style")) {
+      const st = document.createElement("style");
+      st.id = "brot-copy-style";
+      st.textContent =
+        "#brot-copy-pendings{position:sticky;top:8px;float:right;z-index:2;" +
+        "width:28px;height:28px;display:inline-flex;align-items:center;" +
+        "justify-content:center;border:1px solid " +
+        COLORS.borderLight +
+        ";background:" +
+        COLORS.surface +
+        ";color:" +
+        COLORS.textSecondary +
+        ";border-radius:8px;padding:0;margin:0 0 8px 8px;cursor:pointer;}" +
+        "#brot-copy-pendings:hover{background:" +
+        COLORS.surfaceHover +
+        ";color:" +
+        COLORS.textPrimary +
+        ";}" +
+        "#brot-copy-pendings.done,#brot-copy-pendings.done:hover{border-color:" +
+        COLORS.statusPass +
+        ";color:" +
+        COLORS.statusPass +
+        ";background:" +
+        COLORS.surface +
+        ";}" +
+        "#brot-copy-pendings .brot-tip{position:absolute;top:calc(100% + 6px);" +
+        "right:0;background:" +
+        COLORS.actionPrimary +
+        ";color:" +
+        COLORS.surface +
+        ";font:500 11.5px/1 Inter,sans-serif;padding:5px 10px;border-radius:6px;" +
+        "white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.12s;}" +
+        "#brot-copy-pendings:hover .brot-tip,#brot-copy-pendings.done .brot-tip{opacity:1;}";
+      document.head.appendChild(st);
+    }
+
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "brot-copy-pendings";
+    btn.setAttribute("aria-label", "Copy pendings to clipboard");
+    btn.innerHTML =
+      '<span class="brot-ic-copy" style="display:inline-flex">' +
+      COPY_ICON +
+      '</span><span class="brot-ic-ok" style="display:none">' +
+      CHECK_ICON +
+      '</span><span class="brot-tip">Copy</span>';
+    btn.addEventListener("click", () => {
+      const live = findDetailPaper();
+      const now = live && activePendings(live);
+      if (!now || !live) return;
+      const isPrev = (PENDING_TABS.find((t) => t.kind === now.kind) || {}).prev;
+      copyPendingsText(pendingsHeader(live, isPrev) + "\n\n" + now.text, btn);
+    });
+    scroller.insertBefore(btn, scroller.firstChild);
+  }
+
   function startExamsObserver() {
     if (examsObserver) return;
     examsObserver = new MutationObserver(() => {
@@ -223,6 +445,8 @@
     restoreDelusion();
     const oldCard = document.getElementById("brot-last5-card");
     if (oldCard) oldCard.remove();
+    const copyBtn = document.getElementById("brot-copy-pendings");
+    if (copyBtn) copyBtn.remove();
   }
 
   function startExams() {

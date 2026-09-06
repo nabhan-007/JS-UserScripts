@@ -52,6 +52,13 @@
 
   function watchSettingsPopover() {
     if (settingsObserver) return;
+    if (!document.body) {
+      // document-start injection: body doesn't exist yet, retry on ready
+      document.addEventListener("DOMContentLoaded", watchSettingsPopover, {
+        once: true,
+      });
+      return;
+    }
     settingsObserver = new MutationObserver(() => {
       if (settingsScanTimer) clearTimeout(settingsScanTimer);
       settingsScanTimer = setTimeout(scanForSettingsPopover, 150);

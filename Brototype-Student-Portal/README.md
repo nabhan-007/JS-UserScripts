@@ -20,6 +20,7 @@ A userscript that makes the [Brototype student portal](https://student.brototype
 - **Normal mode** — shows your real stats
 - **Delusion mode** — makes it look like you passed everything (100% pass rate)
 - **Last 5 exams** — shows a separate card with stats from only your 5 most recent exams
+- **Copy pendings** — on an exam's detail panel, a Copy button floats top-right inside the Previous/Current Pendings text (stays visible while scrolling) and copies it with a `Module N - Pendings` header; on 1st-attempt exams Previous counts as the prior module
 
 ### On the Requests Page
 - **Auto-selects Pending** — opens on the Pending tab instead of All, since that's what you check most

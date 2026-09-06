@@ -2,6 +2,8 @@
 
 Run through every item before each release. Check only what you verified.
 
+> After updating the script in Violentmonkey, hard-refresh every portal tab (`Ctrl+Shift+R`) — open tabs keep running the previously loaded copy.
+
 ---
 
 ## Module Page
@@ -79,6 +81,20 @@ Run through every item before each release. Check only what you verified.
 
 ### Normal Mode
 - [ ] All original stats shown, no modifications
+
+### Focus Outline (all pages)
+- [ ] Click and Tab through every script button (module controls, Copy, Done, Reset, update modal) → no black focus outline anywhere
+
+### Copy Pendings (exam detail panel)
+- [ ] Open Previous Pendings tab → Copy button floats top-right inside the text panel
+- [ ] Open Current Pendings tab → Copy button floats top-right inside the text panel
+- [ ] Details/Marks tab → Copy button hidden
+- [ ] Click Copy → clipboard icon swaps to green check, tooltip flips to "Copied", clipboard holds `Module N - Pendings` header + pending text
+- [ ] 1st-attempt exam → Previous Pendings header says Module N-1, Current says Module N
+- [ ] Copied text keeps line breaks, no HTML junk
+- [ ] Switch tabs → button re-injected in new panel, no duplicates
+- [ ] Switch exams (?id= change) → button re-injected for new exam
+- [ ] Leave exams page → button removed, 0 errors
 
 ---
 

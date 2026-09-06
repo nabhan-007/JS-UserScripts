@@ -13,3 +13,5 @@
 - `Brototype-Student-Portal/`: sources live in `modules/*.js` (build order in `build.js`); `script.user.js` is generated — never edit it directly, run `node build.js` after editing modules.
 - `__SCRIPT_VERSION__` in modules is stamped from `header.txt`'s `@version` at build time; bump the version only in `header.txt`.
 - Audit reports are stored in `Brototype-Student-Portal/Audit-Reports/`, one file per reviewer/model (e.g. `GLM.txt`, `ZCode.md`). They are the historical record — remediation status lives in `Audit-Reports/RESOLUTIONS.md` (see rule 4).
+- Script buttons must never show a focus outline: the global rule in `#brot-styles` (`core.js`) covers every `button` inside `[id^="brot-"]` containers plus `button[id^="brot-"]` itself. Keep the `brot-` id convention on all current/future script containers and buttons — no per-button fix needed.
+- Live verification caveat: a portal tab runs the script copy loaded at its last (hard) refresh. After any Violentmonkey update, hard-refresh portal tabs before testing, or you will be testing the old build.

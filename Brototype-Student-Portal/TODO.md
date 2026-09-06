@@ -13,11 +13,11 @@
 - [x] On module pages: sets all topic states to collapsed before refreshing
 - [x] Settings modal closes via Done button or backdrop click only
 
-### 3. Copy Pendings Button
+### 3. ~~Copy Pendings Button~~ ✅
 
-- [ ] Add a copy-to-clipboard button next to the "Previous Pendings" and "Current Pendings" buttons in the exam detail panel
-- [ ] Scrapes the pending text block (task categories, topics, remarks) and copies it to clipboard
-- [ ] Useful for sharing pending topics in study groups or saving locally
+- [x] Copy-to-clipboard button (W1 icon + tooltip) floats sticky top-right inside the Previous/Current Pendings text on the exam detail panel
+- [x] Copies `Module N - Pendings` header + pending text; 1st-attempt Previous counts as Module N-1
+- [x] Hidden on Details/Marks tabs; survives tab/exam switching; no focus outline (global rule)
 
 ### 4. Disclaimer on First Install
 

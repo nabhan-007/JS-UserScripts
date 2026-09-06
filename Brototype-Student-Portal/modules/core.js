@@ -344,6 +344,13 @@
 
   function ensureBrotStyles() {
     if (document.getElementById("brot-styles")) return;
+    if (!document.head) {
+      // document-start injection: head doesn't exist yet, retry on ready
+      document.addEventListener("DOMContentLoaded", ensureBrotStyles, {
+        once: true,
+      });
+      return;
+    }
     const st = document.createElement("style");
     st.id = "brot-styles";
     st.textContent = [
@@ -398,6 +405,9 @@
       "padding:8px 12px;border-radius:7px;cursor:pointer;flex-shrink:0;",
       "transition:background 0.15s;}",
       ".brot-tip-act:hover{background:#333;}",
+      // Global: no focus outline on any script button, current or future.
+      // Convention: every script container/button id starts with "brot-".
+      '[id^="brot-"] button:focus,button[id^="brot-"]:focus{outline:none;}',
     ].join("\n");
     document.head.appendChild(st);
   }

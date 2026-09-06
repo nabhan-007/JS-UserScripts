@@ -408,6 +408,7 @@
   }
 
   // Feature bootstrap
+  ensureBrotStyles(); // shared styles (incl. global no-outline rule) on every page
   initReadMore();
   initAutoScroll();
   initUploadTip();
