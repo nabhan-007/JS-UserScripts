@@ -4,9 +4,11 @@ const dir = __dirname;
 
 const header = fs.readFileSync(path.join(dir, "header.txt"), "utf8");
 const footer = fs.readFileSync(path.join(dir, "footer.txt"), "utf8");
+// Core first (config + state). Guard second: it returns from the IIFE
+// before anything installs unless the disclaimer was accepted.
 // Settings before module-page: ensureBrotStyles() must be defined
 // before module-page.js calls it at runtime.
-const modules = ["core.js", "settings.js", "module-page.js", "exams.js", "runtime.js"];
+const modules = ["core.js", "guard.js", "settings.js", "disclaimer.js", "module-page.js", "exams.js", "runtime.js"];
 
 // Extract version from header.txt @version line and inject into modules
 const verMatch = header.match(/@version\s+([^\s]+)/);

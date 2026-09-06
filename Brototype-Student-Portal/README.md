@@ -26,25 +26,27 @@ A userscript that makes the [Brototype student portal](https://student.brototype
 - **Auto-selects Pending** — opens on the Pending tab instead of All, since that's what you check most
 
 ### Everywhere
+- **First-run disclaimer** — a blocking agreement modal on fresh install (Accept = never ask again, Decline = script stays inert until the next session)
 - **Update checker** — quietly checks for newer versions and shows a small popup when one is available
 - **Esc key** — hard refreshes the page (on module pages, collapses all topics first)
 
 ### Settings (click your profile → MNM Script Settings)
 - **Loading image** toggle — choose between an art image or a spinner
 - **Exam stats** — pick Normal, Delusion, or Last 5 exams
-- **Reset this module** — forget the saved state for the current page
-- **Reset ALL modules** — forget everything (asks for confirmation)
+- **Reset everything** — wipes all script data (topics, settings, agreement) and reloads fresh
 - **Contact us** — opens a pre-filled email
 
 ---
 
 ## How It's Built
 
-The script is one file (`script.user.js`) built from 5 smaller files:
+The script is one file (`script.user.js`) built from 7 smaller files:
 
 ```
 core.js         → Config, colors, event bus, overlay, DOM helpers, state save/load
+guard.js        → First-install gate: returns before anything installs until disclaimer accepted
 settings.js     → Settings popup, toggles, reset buttons
+disclaimer.js   → First-run agreement modal (Accept persists, Decline is session-scoped)
 module-page.js  → Expand/collapse buttons, topic memory, read-more, auto-scroll, upload tip
 exams.js        → Delusion mode, last-5 card
 runtime.js      → Page detection, SPA navigation hooks, startup

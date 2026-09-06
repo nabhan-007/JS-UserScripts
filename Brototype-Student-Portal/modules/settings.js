@@ -248,6 +248,8 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "brot-sd" + (danger ? " brot-danger" : "");
+      // Single button: span the full grid width.
+      btn.style.gridColumn = "1 / -1";
       const kk = document.createElement("span");
       kk.className = "brot-k";
       kk.textContent = k;
@@ -257,46 +259,36 @@
       sdGrid.appendChild(btn);
     }
 
+    // Nuclear reset: wipe every trace of the script (topics, settings,
+    // disclaimer agreement, skipped-update + declined flags) and reload
+    // into a fresh-install state.
     addDataButton(
-      "Reset this module",
-      "Expand/collapse state only",
-      false,
-      () => {
-        try {
-          localStorage.removeItem(moduleKey());
-          localStorage.removeItem(lastKey());
-        } catch (err) {
-          console.warn(LOG, "module reset failed:", err);
-        }
-        if (isModulePage()) {
-          updateCounter();
-          toggleAll(false);
-        }
-        closeSettingsModal();
-      },
-    );
-
-    addDataButton(
-      "Reset ALL modules",
-      "Every saved state, after confirm",
+      "Reset everything",
+      "Forgets all script data, then reloads fresh",
       true,
       () => {
-        if (!window.confirm("Delete saved state for every module?")) return;
+        if (
+          !window.confirm(
+            "Delete ALL script data (topics, settings, agreement)? " +
+              "The page will reload.",
+          )
+        )
+          return;
         try {
-          const keys = [];
+          const dead = [];
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-            if (k && /^brot_topic\d+_/.test(k)) keys.push(k);
+            if (k && k.indexOf("brot_") === 0) dead.push(k);
           }
-          keys.forEach((k) => localStorage.removeItem(k));
+          dead.forEach((k) => localStorage.removeItem(k));
         } catch (err) {
-          console.warn(LOG, "full reset failed:", err);
+          console.warn(LOG, "reset failed:", err);
         }
-        if (isModulePage()) {
-          updateCounter();
-          toggleAll(false);
-        }
-        closeSettingsModal();
+        try {
+          sessionStorage.removeItem("brot_update_skip");
+          sessionStorage.removeItem(DISCLAIMER_DECLINED_KEY);
+        } catch (err) {}
+        location.reload();
       },
     );
 

@@ -19,12 +19,12 @@
 - [x] Copies `Module N - Pendings` header + pending text; 1st-attempt Previous counts as Module N-1
 - [x] Hidden on Details/Marks tabs; survives tab/exam switching; no focus outline (global rule)
 
-### 4. Disclaimer on First Install
+### 4. ~~Disclaimer on First Install~~ ✅
 
-- [ ] Show an agreement modal on fresh script install
-- [ ] States the user assumes full responsibility for running the script; makers are not liable
-- [ ] Professional tone: script is thoroughly tested but community-built
-- [ ] Needs thorough discussion before implementation
+- [x] Blocking agreement modal on fresh install (Accept / Decline, backdrop click does nothing)
+- [x] Accept persists in localStorage — never shown again; Decline is session-scoped, modal returns next session (accidental-decline recovery)
+- [x] Declined/undecided: script stays fully inert (no feature boot, no SPA routing until Accept)
+- [x] Professional tone: community-built, thoroughly tested, not affiliated with Brototype; user assumes full responsibility
 
 ### 5. Next Exam Countdown Chip
 

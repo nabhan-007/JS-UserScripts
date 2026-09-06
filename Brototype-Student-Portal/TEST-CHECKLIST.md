@@ -104,8 +104,7 @@ Run through every item before each release. Check only what you verified.
 - [ ] Opens from profile popover → "MNM Script Settings" row
 - [ ] "aniya nill" toggle switches between image and spinner overlay
 - [ ] Exam stats segmented control (Delusion / Normal / Last 5) saves to localStorage
-- [ ] "Reset this module" → removes current module's state
-- [ ] "Reset ALL modules" → confirm dialog → removes all `brot_topic*` keys
+- [ ] "Reset everything" → confirm dialog → removes all `brot_*` keys + session flags → reloads → disclaimer modal shows again
 - [ ] "Contact us" → opens Gmail compose
 - [ ] Done button closes modal
 - [ ] Clicking backdrop closes modal
@@ -126,6 +125,17 @@ Run through every item before each release. Check only what you verified.
 - [ ] Teardown runs on page leave (no stale listeners)
 - [ ] No duplicate controls after SPA re-render
 - [ ] Upload tip click handler re-registered on re-init (not duplicated)
+
+---
+
+## Disclaimer Modal
+
+- [ ] Fresh install (no `brot_settings`) → blocking modal appears, Accept + Decline present
+- [ ] Backdrop click → modal stays (blocking)
+- [ ] Reload with no decision → modal shows again
+- [ ] Accept → modal gone, `disclaimerAccepted` in localStorage, features boot; reload + new tab → no modal
+- [ ] Decline → modal gone, nothing in localStorage, `brot_disclaimer_declined` in sessionStorage, script inert
+- [ ] Declined session: SPA navigate → no modal, no features; new tab/session → modal returns
 
 ---
 

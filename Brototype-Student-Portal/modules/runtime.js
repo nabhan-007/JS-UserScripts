@@ -407,47 +407,52 @@
     waitForTopics();
   }
 
-  // Feature bootstrap
-  ensureBrotStyles(); // shared styles (incl. global no-outline rule) on every page
-  initReadMore();
-  initAutoScroll();
-  initUploadTip();
-  watchSettingsPopover();
-  checkForUpdate();
+  // Feature bootstrap (reached only after Accept -- see guard.js)
+  function bootFeatures() {
+    ensureBrotStyles(); // shared styles (incl. global no-outline rule) on every page
+    initReadMore();
+    initAutoScroll();
+    initUploadTip();
+    watchSettingsPopover();
+    checkForUpdate();
 
-  // -- Kickoff ---------------------------------------------------------
+    // -- Kickoff ---------------------------------------------------------
 
-  setTimeout(() => {
-    // Exams page -- apply stats tweaks; module pages handled below
-    if (isExamsPage()) {
-      startExams();
-      return;
-    }
+    setTimeout(() => {
+      // Exams page -- apply stats tweaks; module pages handled below
+      if (isExamsPage()) {
+        startExams();
+        return;
+      }
 
-    // Requests page -- auto-select Pending tab
-    if (isRequestsPage()) {
-      autoSelectPendingTab();
-      return;
-    }
+      // Requests page -- auto-select Pending tab
+      if (isRequestsPage()) {
+        autoSelectPendingTab();
+        return;
+      }
 
-    // Not a module page -- stay idle; SPA watchers will handle entering one
-    if (!isModulePage()) return;
-    if (getContainers().length > 0) {
-      init();
-    } else {
-      showOverlay("Loading\u2026");
-      let attempts = 0;
+      // Not a module page -- stay idle; SPA watchers will handle entering one
+      if (!isModulePage()) return;
+      if (getContainers().length > 0) {
+        init();
+      } else {
+        showOverlay("Loading\u2026");
+        let attempts = 0;
 
-      const wait = function () {
-        if (getContainers().length > 0) {
-          init();
-          return;
-        }
-        attempts++;
-        if (attempts < 30) setTimeout(wait, 300);
-        else hideOverlay();
-      };
+        const wait = function () {
+          if (getContainers().length > 0) {
+            init();
+            return;
+          }
+          attempts++;
+          if (attempts < 30) setTimeout(wait, 300);
+          else hideOverlay();
+        };
 
-      wait();
-    }
-  }, 500);
+        wait();
+      }
+    }, 500);
+  } // end bootFeatures
+
+  // Kickoff: guard.js already ensured acceptance, boot unconditionally.
+  bootFeatures();
