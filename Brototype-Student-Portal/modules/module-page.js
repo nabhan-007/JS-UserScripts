@@ -323,11 +323,11 @@
         }
       }
       updateCounter();
+      const needRestore = Lock.dirty;
       unlockAll();
 
       // Deferred restore (requested while this batch ran)
-      if (Lock.dirty) {
-        Lock.dirty = false;
+      if (needRestore) {
         restore();
       }
 

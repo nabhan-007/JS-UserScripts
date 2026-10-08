@@ -1303,11 +1303,11 @@
         }
       }
       updateCounter();
+      const needRestore = Lock.dirty;
       unlockAll();
 
       // Deferred restore (requested while this batch ran)
-      if (Lock.dirty) {
-        Lock.dirty = false;
+      if (needRestore) {
         restore();
       }
 
@@ -2092,6 +2092,22 @@
     }
   }
 
+  // Click truncated "... Read more" spans inside the active pendings box.
+  // Returns true when anything was expanded (caller should re-read after a beat).
+  function expandPendingsReadMore(paper) {
+    const active = paper && activePendings(paper);
+    if (!active) return false;
+    const tab = PENDING_TABS.find((t) => t.kind === active.kind);
+    const box = tab && paper.querySelector('[data-testid="' + tab.testid + '"]');
+    if (!box) return false;
+    const mores = [...box.querySelectorAll("span")].filter(
+      (s) => (s.textContent || "").trim().toLowerCase() === "read more",
+    );
+    if (!mores.length) return false;
+    mores.forEach((s) => s.click());
+    return true;
+  }
+
   function injectCopyPendings() {
     if (!isExamsPage()) return;
     const paper = findDetailPaper();
@@ -2158,10 +2174,20 @@
       '</span><span class="brot-tip">Copy</span>';
     btn.addEventListener("click", () => {
       const live = findDetailPaper();
-      const now = live && activePendings(live);
-      if (!now || !live) return;
-      const isPrev = (PENDING_TABS.find((t) => t.kind === now.kind) || {}).prev;
-      copyPendingsText(pendingsHeader(live, isPrev) + "\n\n" + now.text, btn);
+      if (!live) return;
+      const doCopy = () => {
+        const fresh = findDetailPaper();
+        const now = fresh && activePendings(fresh);
+        if (!now || !fresh) return;
+        const isPrev = (PENDING_TABS.find((t) => t.kind === now.kind) || {})
+          .prev;
+        const text = (now.text || "").replace(/Show less\s*$/i, "").trimEnd();
+        copyPendingsText(pendingsHeader(fresh, isPrev) + "\n\n" + text, btn);
+      };
+      // Truncated panels end in "... Read more" -- expand first so the copy
+      // holds the full text, then re-read after React re-renders.
+      if (expandPendingsReadMore(live)) setTimeout(doCopy, 350);
+      else doCopy();
     });
     scroller.insertBefore(btn, scroller.firstChild);
   }

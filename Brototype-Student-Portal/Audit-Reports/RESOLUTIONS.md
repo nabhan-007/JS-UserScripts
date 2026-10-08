@@ -60,7 +60,7 @@ untouched as the historical record.
     (user click, Watch re-init) are silently dropped. Side effect of the lock-wedge fix
     reshaped in `b9f98a8`.
   - Fix: capture the flag before unlocking.
-  - Resolution: Open — no action yet.
+  - Resolution: Open — fix implemented in working tree (uncommitted): `modules/module-page.js:326,330` captures `const needRestore = Lock.dirty` before `unlockAll()` in `finishBatch`, `script.user.js` rebuilt via `node build.js`. Verified live 2026-10-08 on new build (DEBUG-marker run): full module suite green (7-topic expand/collapse 7/7↔0/7, overlay, restore-after-reload, auto-scroll, upload toast, Esc) + exams/requests/settings + 0 console errors. Forced mid-batch interleaving not reproducible on available pages (finishBatch re-saves end-state, so deferred restore is a no-op in the forceable cases); natural Watch re-init path code-reviewed. Leaving unticked pending real-world race observation.
 
 - [ ] **H3 — "Last 5 exams" is actually the first 5 in DOM order** · `MNM-H2` · `ZCode:B#1`
   - Problem: `findExamRows().slice(0, 5)` (`exams.js:56`) assumes DOM order = newest
