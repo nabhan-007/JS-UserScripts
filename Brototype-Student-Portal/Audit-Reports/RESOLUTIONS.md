@@ -12,8 +12,8 @@ untouched as the historical record.
 |--------|-------|
 | Open: Low | 21 |
 | Open: Medium | 11 |
-| Closed: Implemented | 8 |
-| Open: High | 5 |
+| Closed: Implemented | 9 |
+| Open: High | 4 |
 | Closed: Accepted | 5 |
 | Closed: Declined | 4 |
 | Closed: False alarm | 2 |
@@ -21,10 +21,10 @@ untouched as the historical record.
 
 ## Contents
 
-- [Open: High (5)](#open-high)
+- [Open: High (4)](#open-high)
 - [Open: Medium (11)](#open-medium)
 - [Open: Low (21)](#open-low)
-- [Closed: Implemented (8)](#closed-implemented)
+- [Closed: Implemented (9)](#closed-implemented)
 - [Closed: False alarm (2)](#closed-false-alarm)
 - [Closed: Declined (4)](#closed-declined)
 - [Closed: Accepted (5)](#closed-accepted)
@@ -53,14 +53,6 @@ untouched as the historical record.
   - Fix: bail on `e.target.closest('input, textarea, select, [contenteditable="true"]')`,
     on `e.defaultPrevented`, and on open site dialogs.
   - Resolution: Open — no action yet.
-
-- [ ] **H2 — Deferred restore after a batch is dead code** · `ZCode:A2`
-  - Problem: `unlockAll()` clears `Lock.dirty` (`module-page.js:290`) *before*
-    `finishBatch` checks it (`module-page.js:328`), so restore requests arriving mid-batch
-    (user click, Watch re-init) are silently dropped. Side effect of the lock-wedge fix
-    reshaped in `b9f98a8`.
-  - Fix: capture the flag before unlocking.
-  - Resolution: Open — fix implemented in working tree (uncommitted): `modules/module-page.js:326,330` captures `const needRestore = Lock.dirty` before `unlockAll()` in `finishBatch`, `script.user.js` rebuilt via `node build.js`. Verified live 2026-10-08 on new build (DEBUG-marker run): full module suite green (7-topic expand/collapse 7/7↔0/7, overlay, restore-after-reload, auto-scroll, upload toast, Esc) + exams/requests/settings + 0 console errors. Forced mid-batch interleaving not reproducible on available pages (finishBatch re-saves end-state, so deferred restore is a no-op in the forceable cases); natural Watch re-init path code-reviewed. Leaving unticked pending real-world race observation.
 
 - [ ] **H3 — "Last 5 exams" is actually the first 5 in DOM order** · `MNM-H2` · `ZCode:B#1`
   - Problem: `findExamRows().slice(0, 5)` (`exams.js:56`) assumes DOM order = newest
@@ -347,6 +339,15 @@ untouched as the historical record.
     teardown on `pagehide` at `runtime.js:361`), covering module/exams features. Residuals
     (one-shot registry, dead settings watcher) tracked as M1.
   - Resolution: Partial — module/exams covered, settings watcher residual open (see M1).
+
+- [x] **C9 — Deferred restore after a batch is dead code** · `ZCode:A2`
+  - Fix landed: `finishBatch` captures `const needRestore = Lock.dirty` before
+    `unlockAll()` (`modules/module-page.js:326`, check at `:330`), commit `1f1f95a`.
+  - Resolution: Implemented — verified live 2026-10-08: forced mid-batch Watch re-init
+    during Expand All on the 7-topic module (`?id=2ceecd44…`) → `re-init after DOM
+    replacement` → `Expand All done` → deferred `Restoring topics…` overlay observed,
+    converged to 7/7 with overlay cleared and 0 console errors. (Old code drops the
+    request; the overlay flash + convergence prove the deferred path ran.)
 
 ## Closed: False alarm
 
